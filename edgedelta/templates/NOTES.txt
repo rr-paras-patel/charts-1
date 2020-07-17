@@ -1,2 +1,2 @@
 1. Visit https://admin.edgedelta.com
-2. Find the configuration with {{ .Values.apiKey }} to check check if agents are active
+2. Find the configuration with {{ .Values.apiKey }} to check if agents are active
