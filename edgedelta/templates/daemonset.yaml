@@ -25,6 +25,13 @@ spec:
           env:
             - name:  ED_API_KEY
               value:  {{ .Values.apiKey }}
+            - name:  STORE_PORT
+              value: "6062"
+            # pass node hostname to agent
+            - name: ED_HOST_OVERRIDE
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           command:
             - /edgedelta/edgedelta
           resources:
