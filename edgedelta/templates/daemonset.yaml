@@ -14,8 +14,12 @@ spec:
       maxUnavailable: 1
   template:
     metadata:
+      annotations:
+      {{- if .Values.annotations }}
+        {{- toYaml .Values.annotations | nindent 8 }}
+      {{- end }}
       labels:
-       {{- include "edgedelta.labels" . | nindent 8 }}
+      {{- include "edgedelta.labels" . | nindent 8 }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
@@ -25,8 +29,10 @@ spec:
           env:
             - name:  ED_API_KEY
               value:  {{ .Values.apiKey }}
+            {{- if .Values.storePort }}
             - name:  STORE_PORT
-              value: "6062"
+              value: {{ .Values.storePort }}
+            {{- end }}
             # pass node hostname to agent
             - name: ED_HOST_OVERRIDE
               valueFrom:
