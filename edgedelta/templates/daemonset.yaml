@@ -24,8 +24,12 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           image: edgedelta/agent:{{ .Values.image.tag | default .Chart.AppVersion }}
+          {{- if .Values.storePort }}
           ports:
-            - containerPort: 1123
+            - name: metrics
+              hostPort: {{ .Values.storePort }}
+              containerPort: {{ .Values.storePort }}
+          {{- end }}
           env:
             - name:  ED_API_KEY
               value:  {{ .Values.apiKey }}
