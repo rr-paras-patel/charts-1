@@ -8,6 +8,10 @@ nameOverride: ""
 fullnameOverride: ""
 apiKey: ""
 storePort: ""
+httpProxy: ""
+noProxy: ""
+edSuppressionMode: ""
+
 annotations: {}
 resources:
   limits:
