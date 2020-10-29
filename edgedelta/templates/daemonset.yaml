@@ -58,6 +58,10 @@ spec:
             - name:  ED_TAG_OVERRIDE
               value: {{ .Values.edTagOverride }}
             {{- end }}
+            {{- if .Values.edOrgID }}
+            - name:  ED_ORG_ID
+              value: {{ .Values.edOrgID }}
+            {{- end }}
             {{- if .Values.edSuppressionMode }}
             - name:  ED_SUPPRESSION_MODE
               value: "{{ .Values.edSuppressionMode }}"
@@ -75,8 +79,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-          command:
-            - /edgedelta/edgedelta
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
@@ -85,6 +87,11 @@ spec:
             - name: varlibdockercontainers
               mountPath: /var/lib/docker/containers
               readOnly: true
+            {{- if .Values.edConfigContent }}
+            - name: config-volume
+              mountPath: /edgedelta/config.yml
+              subPath: config.yml
+            {{- end }}
       terminationGracePeriodSeconds: 10
       volumes:
         - name: varlog
@@ -93,3 +100,8 @@ spec:
         - name: varlibdockercontainers
           hostPath:
             path: /var/lib/docker/containers
+        {{- if .Values.edConfigContent }}
+        - name: config-volume
+          configMap:
+            name: {{ .Release.Name }}
+        {{- end }}
