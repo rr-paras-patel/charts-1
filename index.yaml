@@ -2,8 +2,18 @@ apiVersion: v1
 entries:
   edgedelta:
   - apiVersion: v2
+    appVersion: v0.0.100
+    created: "2020-11-30T14:23:41.46025939-08:00"
+    description: Edge Delta Agent Chart for Kubernetes
+    digest: 40fb6cd9ae3e00d21c57314a367284ae7cea422d034d80a5279f7a6aef52b685
+    name: edgedelta
+    type: application
+    urls:
+    - https://edgedelta.github.io/charts/edgedelta-0.0.100.tgz
+    version: 0.0.100
+  - apiVersion: v2
     appVersion: v0.0.99
-    created: "2020-11-04T09:47:58.483687352-08:00"
+    created: "2020-11-30T14:23:41.469143215-08:00"
     description: Edge Delta Agent Chart for Kubernetes
     digest: af8758ad043f8ae23287c3920ee9b967738a02cb14d99a924170a338afdf7196
     name: edgedelta
@@ -13,7 +23,7 @@ entries:
     version: 0.0.99
   - apiVersion: v2
     appVersion: v0.0.98
-    created: "2020-11-04T09:47:58.483491-08:00"
+    created: "2020-11-30T14:23:41.468923846-08:00"
     description: Edge Delta Agent Chart for Kubernetes
     digest: 6f9adbe0e8327a2065d0c2da4ffb91101ab7b0226d862c1442abc3d894ca62bb
     name: edgedelta
@@ -23,7 +33,7 @@ entries:
     version: 0.0.98
   - apiVersion: v2
     appVersion: v0.0.97
-    created: "2020-11-04T09:47:58.483294383-08:00"
+    created: "2020-11-30T14:23:41.468700641-08:00"
     description: Edge Delta Agent Chart for Kubernetes
     digest: 8d04824fa2a3ebc1ac2ba1562489fd671a231957138bd205be7c041e800da9f3
     name: edgedelta
@@ -33,7 +43,7 @@ entries:
     version: 0.0.97
   - apiVersion: v2
     appVersion: v0.0.96
-    created: "2020-11-04T09:47:58.483129423-08:00"
+    created: "2020-11-30T14:23:41.468446852-08:00"
     description: Edge Delta Agent Chart for Kubernetes
     digest: 1a22a36a150ce158277edc481b9f6c192ff62b119a378d64a0ee5ace07386cb5
     name: edgedelta
@@ -43,7 +53,7 @@ entries:
     version: 0.0.96
   - apiVersion: v2
     appVersion: v0.0.95
-    created: "2020-11-04T09:47:58.482962264-08:00"
+    created: "2020-11-30T14:23:41.467724797-08:00"
     description: Edge Delta Agent Chart for Kubernetes
     digest: 3297dfd3a0f78cc9a988f3ba45ee84eab040afa95aa65e4f651de609c7a10218
     name: edgedelta
@@ -53,7 +63,7 @@ entries:
     version: 0.0.95
   - apiVersion: v2
     appVersion: v0.0.94
-    created: "2020-11-04T09:47:58.482776152-08:00"
+    created: "2020-11-30T14:23:41.4674257-08:00"
     description: Edge Delta Agent Chart for Kubernetes
     digest: 7ed707f7b8031c999386861c643f825174b941442b8d123973272b19fab55d87
     name: edgedelta
@@ -63,7 +73,7 @@ entries:
     version: 0.0.94
   - apiVersion: v2
     appVersion: v0.0.93
-    created: "2020-11-04T09:47:58.48259952-08:00"
+    created: "2020-11-30T14:23:41.460889102-08:00"
     description: Edge Delta Agent Chart for Kubernetes
     digest: 4193882cf89448e3e72225d71ba459325a12c74f1f0e782e5a168e7c62a16565
     name: edgedelta
@@ -73,7 +83,7 @@ entries:
     version: 0.0.93
   - apiVersion: v2
     appVersion: v0.0.91
-    created: "2020-11-04T09:47:58.482433569-08:00"
+    created: "2020-11-30T14:23:41.460696511-08:00"
     description: Edge Delta Agent Chart for Kubernetes
     digest: 2a3cdde6ba81e9318b0648829c8448057cf2e2b78decb76ae07a87b044c614e8
     name: edgedelta
@@ -83,7 +93,7 @@ entries:
     version: 0.0.91
   - apiVersion: v2
     appVersion: v0.0.89
-    created: "2020-11-04T09:47:58.482259154-08:00"
+    created: "2020-11-30T14:23:41.460477819-08:00"
     description: Edge Delta Agent Chart for Kubernetes
     digest: 2ddf9ca6899d7d394f777eddc3fa8a5886a233b7d00bde7e9c8c51db50ad352c
     name: edgedelta
@@ -91,4 +101,4 @@ entries:
     urls:
     - https://edgedelta.github.io/charts/edgedelta-0.0.89.tgz
     version: 0.0.89
-generated: "2020-11-04T09:47:58.481980885-08:00"
+generated: "2020-11-30T14:23:41.45982997-08:00"
