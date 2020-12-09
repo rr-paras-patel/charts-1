@@ -10,7 +10,14 @@ apiKey: ""
 storePort: ""
 httpProxy: ""
 noProxy: ""
-
+# envs:
+#  - name: sampleVar
+#    value: sampleValue
+# secrets:
+#  - name: sampleSecretVar
+#    secretKeyRef:
+#      name: sampleK8SecretName
+#      key: sampleK8sSecretSubkey
 annotations: {}
 resources:
   limits:
