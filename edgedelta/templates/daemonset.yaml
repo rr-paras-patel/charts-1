@@ -32,8 +32,19 @@ spec:
               containerPort: {{ .Values.storePort }}
           {{- end }}
           env:
+            {{- if .Values.apiKey }}
             - name:  ED_API_KEY
-              value:  {{ .Values.apiKey }}
+              value: "{{ .Values.apiKey }}"
+            {{- end }}
+            {{- if .Values.secretApiKey }}
+            {{- if .Values.secretApiKey.name }}
+            - name:  ED_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretApiKey.name }}
+                  key: {{ .Values.secretApiKey.key }}
+            {{- end }}
+            {{- end }}
             {{- if .Values.storePort }}
             - name:  STORE_PORT
               value: "{{ .Values.storePort }}"
@@ -66,6 +77,14 @@ spec:
             - name:  ED_SUPPRESSION_MODE
               value: "{{ .Values.edSuppressionMode }}"
             {{- end }}
+            {{- if .Values.edWorkflows }}
+            - name:  ED_WORKFLOWS
+              value: {{ .Values.edWorkflows }}
+            {{- end }}
+            {{- if .Values.edWorkflowPrefixes }}
+            - name:  ED_WORKFLOW_PREFIXES
+              value: {{ .Values.edWorkflowPrefixes }}
+            {{- end }}
             {{- if .Values.httpProxy }}
             - name:  HTTP_PROXY
               value: {{ .Values.httpProxy }}
@@ -81,7 +100,7 @@ spec:
                   fieldPath: spec.nodeName
             {{- range .Values.envs }}
             - name: {{ .name }}
-              value: {{ .value }}
+              value: "{{ .value }}"
             {{- end }}
             {{- range .Values.secrets }}
             - name: {{ .name }}
