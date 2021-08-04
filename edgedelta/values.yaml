@@ -10,7 +10,6 @@ apiKey: ""
 # Create secret api key command:
 # kubectl create secret generic ed-api-key --namespace=edgedelta --from-literal=ed-api-key="YOUR_API_KEY"
 
-
 # Predefined environment variables
 # See: https://docs.edgedelta.com/installation/environment-variables
 
@@ -24,13 +23,17 @@ edSkipConfDownload: ""
 edWorkflows: ""
 edWorkflowPrefixes: ""
 
+# Persisting Cursor props constraints
+persistingCursorProps:
+  enabled: false
+  hostMountPath: "/var/lib/edgedelta"
+  containerMountPath: "/var/lib/edgedelta"
 
 # Custom environment variables:
 
 # envs:
 #  - name: sample-var
 #    value: sample-value
-
 
 # Custom secret environment variables:
 # Use only lowercase alphabetic and - characters in secretKeyRef name and key fields, otherwise helm deploys the release but throws an obscure error about DNS-1123 subdomain format
@@ -44,7 +47,6 @@ edWorkflowPrefixes: ""
 # Create secrets with below command:
 # kubectl create secret generic sample-k8-secret-name --namespace=edgedelta --from-literal=sample-k8s-secret-subkey="SECRET_VALUE"
 
-
 # Resource constraints
 
 annotations: {}
@@ -54,7 +56,6 @@ resources:
   requests:
     cpu: 200m
     memory: 256Mi
-
 
 # Helm overrides
 

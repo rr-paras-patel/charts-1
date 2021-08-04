@@ -122,6 +122,10 @@ spec:
               mountPath: /edgedelta/config.yml
               subPath: config.yml
             {{- end }}
+            {{- if .Values.persistingCursorProps.enabled }}
+            - name: persisting-cursor-storage
+              mountPath: {{ .Values.persistingCursorProps.containerMountPath }}
+            {{- end }}
       terminationGracePeriodSeconds: 10
       volumes:
         - name: varlog
@@ -134,4 +138,9 @@ spec:
         - name: config-volume
           configMap:
             name: {{ .Release.Name }}
+        {{- end }}
+        {{- if .Values.persistingCursorProps.enabled }}
+        - name: persisting-cursor-storage
+          hostPath:
+            path: {{ .Values.persistingCursorProps.hostMountPath }}
         {{- end }}

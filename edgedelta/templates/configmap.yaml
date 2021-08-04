@@ -1,12 +1,12 @@
 {{- if .Values.edConfigContent }}
-        
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "edgedelta.labels" . | nindent 4 }}
-data: 
+data:
   config.yml: |-
 {{ tpl .Values.edConfigContent . | indent 4 }}
 
