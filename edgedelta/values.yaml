@@ -22,6 +22,7 @@ edSuppressionMode: ""
 edSkipConfDownload: ""
 edWorkflows: ""
 edWorkflowPrefixes: ""
+edDisableLeaderElection: ""
 
 # Persisting Cursor props constraints
 persistingCursorProps:
@@ -60,6 +61,7 @@ resources:
 # Helm overrides
 
 image:
+  name: gcr.io/edgedelta/agent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 

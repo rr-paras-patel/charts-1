@@ -24,7 +24,7 @@ spec:
       serviceAccountName: {{ include "edgedelta.fullname" . }}
       containers:
         - name: {{ .Chart.Name }}
-          image: edgedelta/agent:{{ .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           {{- if .Values.storePort }}
           ports:
             - name: metrics
@@ -81,6 +81,12 @@ spec:
             - name:  ED_WORKFLOWS
               value: {{ .Values.edWorkflows }}
             {{- end }}
+            - name:  ED_LEADER_ELECTION_ENABLED
+            {{- if .Values.edDisableLeaderElection }}
+              value: "0"
+            {{- else }}
+              value: "1"
+            {{- end }}
             {{- if .Values.edWorkflowPrefixes }}
             - name:  ED_WORKFLOW_PREFIXES
               value: {{ .Values.edWorkflowPrefixes }}
@@ -88,6 +94,10 @@ spec:
             {{- if .Values.httpProxy }}
             - name:  HTTP_PROXY
               value: {{ .Values.httpProxy }}
+            {{- end }}
+            {{- if .Values.httpsProxy }}
+            - name:  HTTPS_PROXY
+              value: {{ .Values.httpsProxy }}
             {{- end }}
             {{- if .Values.noProxy }}
             - name:  NO_PROXY
@@ -126,6 +136,8 @@ spec:
             - name: persisting-cursor-storage
               mountPath: {{ .Values.persistingCursorProps.containerMountPath }}
             {{- end }}
+      imagePullSecrets:
+        - name: regcred
       terminationGracePeriodSeconds: 10
       volumes:
         - name: varlog
