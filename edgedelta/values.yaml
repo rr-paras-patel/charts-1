@@ -15,6 +15,7 @@ apiKey: ""
 
 storePort: ""
 httpProxy: ""
+httpsProxy: ""
 noProxy: ""
 edBackendDisabled: ""
 edTagOverride: ""
