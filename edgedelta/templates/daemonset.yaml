@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ include "edgedelta.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "edgedelta.labels" . | nindent 4 }}
 spec:
@@ -119,8 +120,15 @@ spec:
                   name: {{ .secretKeyRef.name }}
                   key: {{ .secretKeyRef.key }}
             {{- end }}
+            {{- if .Values.aggregatorProps.enabled }}
+            - name: ED_AGENT_MODE
+              value: processor
+            - name: ED_AGGREGATOR_DESTINATION
+              value: "http://ed-aggregator-svc.{{.Release.Namespace}}.svc.cluster.local:{{.Values.aggregatorProps.port}}"
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          imagePullPolicy: Always
           volumeMounts:
             - name: varlog
               mountPath: /var/log
@@ -137,8 +145,6 @@ spec:
             - name: persisting-cursor-storage
               mountPath: {{ .Values.persistingCursorProps.containerMountPath }}
             {{- end }}
-      imagePullSecrets:
-        - name: regcred
       terminationGracePeriodSeconds: 10
       volumes:
         - name: varlog

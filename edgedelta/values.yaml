@@ -31,6 +31,12 @@ persistingCursorProps:
   hostMountPath: "/var/lib/edgedelta"
   containerMountPath: "/var/lib/edgedelta"
 
+# Aggregator agent mode properties
+# Agents are deployed as daemonset. an extra aggregator agent is deployed to collect/aggregate metrics
+aggregatorProps: 
+  enabled: false
+  port: 9191
+
 # Custom environment variables:
 
 # envs:

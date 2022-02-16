@@ -1,0 +1,142 @@
+{{- if .Values.aggregatorProps.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "edgedelta.fullname" . }}-aggregator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edgedelta.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "edgedelta.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+      {{- if .Values.annotations }}
+        {{- toYaml .Values.annotations | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "edgedelta.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "edgedelta.fullname" . }}
+      containers:
+      - name: {{ .Chart.Name }}-aggregator
+        image: {{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+        ports:
+          - containerPort: {{ .Values.aggregatorProps.port }}
+        env:
+          - name: ED_AGENT_MODE
+            value: aggregator
+          - name: ED_AGGREGATOR_LISTEN_PORT
+            value: "{{ .Values.aggregatorProps.port }}"
+          - name: ED_HOST_OVERRIDE
+            value: {{ .Chart.Name }}-aggregator
+          {{- if .Values.apiKey }}
+          - name:  ED_API_KEY
+            value: "{{ .Values.apiKey }}"
+          {{- end }}
+          {{- if .Values.secretApiKey }}
+          {{- if .Values.secretApiKey.name }}
+          - name:  ED_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretApiKey.name }}
+                key: {{ .Values.secretApiKey.key }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.storePort }}
+          - name:  STORE_PORT
+            value: "{{ .Values.storePort }}"
+          {{- end }}
+          {{- if .Values.edTraceFiles }}
+          - name:  ED_TRACE_FILES
+            value: {{ .Values.edTraceFiles }}
+          {{- end }}
+          {{- if .Values.edApiEndpoint }}
+          - name:  ED_API_ENDPOINT
+            value: {{ .Values.edApiEndpoint }}
+          {{- end }}
+          {{- if .Values.edBackendDisabled }}
+          - name:  ED_BACKEND_DISABLED
+            value: "{{ .Values.edBackendDisabled }}"
+          {{- end }}
+          {{- if .Values.edSkipConfDownload }}
+          - name:  ED_SKIP_CONF_DOWNLOAD
+            value: "{{ .Values.edSkipConfDownload }}"
+          {{- end }}
+          {{- if .Values.edTagOverride }}
+          - name:  ED_TAG_OVERRIDE
+            value: {{ .Values.edTagOverride }}
+          {{- end }}
+          {{- if .Values.edOrgID }}
+          - name:  ED_ORG_ID
+            value: {{ .Values.edOrgID }}
+          {{- end }}
+          {{- if .Values.edSuppressionMode }}
+          - name:  ED_SUPPRESSION_MODE
+            value: "{{ .Values.edSuppressionMode }}"
+          {{- end }}
+          {{- if .Values.edWorkflows }}
+          - name:  ED_WORKFLOWS
+            value: {{ .Values.edWorkflows }}
+          {{- end }}
+          - name:  ED_LEADER_ELECTION_ENABLED
+            value: "0"
+          {{- if .Values.edWorkflowPrefixes }}
+          - name:  ED_WORKFLOW_PREFIXES
+            value: {{ .Values.edWorkflowPrefixes }}
+          {{- end }}
+          {{- if .Values.httpProxy }}
+          - name:  HTTP_PROXY
+            value: {{ .Values.httpProxy }}
+          {{- end }}
+          {{- if .Values.httpsProxy }}
+          - name:  HTTPS_PROXY
+            value: {{ .Values.httpsProxy }}
+          {{- end }}
+          {{- if .Values.noProxy }}
+          - name:  NO_PROXY
+            value: {{ .Values.noProxy }}
+          {{- end }}
+          {{- range .Values.envs }}
+          - name: {{ .name }}
+            value: "{{ .value }}"
+          {{- end }}
+          {{- range .Values.secrets }}
+          - name: {{ .name }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ .secretKeyRef.name }}
+                key: {{ .secretKeyRef.key }}
+          {{- end }}
+        volumeMounts:
+          {{- if .Values.edConfigContent }}
+          - name: config-volume
+            mountPath: /edgedelta/config.yml
+            subPath: config.yml
+          {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        imagePullPolicy: Always
+      terminationGracePeriodSeconds: 10
+      volumes:
+        {{- if .Values.edConfigContent }}
+        - name: config-volume
+          configMap:
+            name: {{ .Release.Name }}
+        {{- end }}
+{{- end }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: ed-aggregator-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    {{- include "edgedelta.labels" . | nindent 4 }}
+  ports:
+    - port: {{.Values.aggregatorProps.port}}
+      name: aggregator-port
