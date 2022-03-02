@@ -24,6 +24,7 @@ edSkipConfDownload: ""
 edWorkflows: ""
 edWorkflowPrefixes: ""
 edDisableLeaderElection: ""
+edTraceFiles: ""
 
 # Persisting Cursor props constraints
 persistingCursorProps:
