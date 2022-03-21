@@ -24,7 +24,9 @@ spec:
     spec:
       serviceAccountName: {{ include "edgedelta.fullname" . }}
       containers:
-        - name: {{ .Chart.Name }}
+
+        # agent container
+        - name: {{ .Chart.Name }}-agent
           image: {{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           {{- if .Values.storePort }}
           ports:
@@ -126,6 +128,13 @@ spec:
             - name: ED_AGGREGATOR_DESTINATION
               value: "http://ed-aggregator-svc.{{.Release.Namespace}}.svc.cluster.local:{{.Values.aggregatorProps.port}}"
             {{- end }}
+            {{- if .Values.httpRecorderProps.enabled }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           imagePullPolicy: Always
@@ -145,6 +154,48 @@ spec:
             - name: persisting-cursor-storage
               mountPath: {{ .Values.persistingCursorProps.containerMountPath }}
             {{- end }}
+            {{- if .Values.httpRecorderProps.enabled }}
+            - mountPath: /var/captured_requests/
+              name: capturedrequests
+              subPathExpr: $(POD_NAME)
+            {{- end }}
+
+        # httprecorder container
+        {{- if .Values.httpRecorderProps.enabled }}
+        - name: {{ .Chart.Name }}-httprecorder
+          image: {{ .Values.httpRecorderProps.image }}
+          imagePullPolicy: Always
+          command:
+            - /edgedelta/httprecorder
+            - --port
+            - "{{ .Values.httpRecorderProps.port }}"
+            - --record_directory
+            - /var/captured_requests/
+            - --record_modes
+            - body
+            - --custom_responses
+            - /.well-known/fastly/logging/challenge=200|*
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+          ports:
+          - containerPort: {{.Values.httpRecorderProps.port}}
+            name: http
+            protocol: TCP
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              memory: 56Mi
+          volumeMounts:
+          - mountPath: /var/captured_requests/
+            name: capturedrequests
+            subPathExpr: $(POD_NAME)
+        {{- end }}
+
       terminationGracePeriodSeconds: 10
       volumes:
         - name: varlog
@@ -163,3 +214,24 @@ spec:
           hostPath:
             path: {{ .Values.persistingCursorProps.hostMountPath }}
         {{- end }}
+        {{- if .Values.httpRecorderProps.enabled }}
+        - name: capturedrequests
+          hostPath:
+            path: /var/log/
+        {{- end }}
+
+{{- if .Values.httpRecorderProps.enabled }}
+---
+# Service for httprecorder
+apiVersion: v1
+kind: Service
+metadata:
+  name: ed-httprecorder-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    {{- include "edgedelta.labels" . | nindent 4 }}
+  ports:
+  - port: {{.Values.httpRecorderProps.port}}
+    name: httprecorder-port
+{{- end }}

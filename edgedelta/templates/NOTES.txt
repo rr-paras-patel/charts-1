@@ -1,8 +1,8 @@
-1. Visit https://admin.edgedelta.com
+1. Visit https://app.edgedelta.com
 {{- if .Values.apiKey }}
-2. Find the configuration with {{ .Values.apiKey }} on https://admin.edgedelta.com to check if agents are active
+2. Find the configuration with {{ .Values.apiKey }} on https://app.edgedelta.com to check if agents are active
 {{- end }}
 {{- if .Values.secretApiKey }}
 2. Create api key secret: kubectl create secret generic ed-api-key --namespace=edgedelta --from-literal=ed-api-key="YOUR_API_KEY"
-3. Find the configuration with "YOUR_API_KEY" on https://admin.edgedelta.com to check if agents are active
+3. Find the configuration with "YOUR_API_KEY" on https://app.edgedelta.com to check if agents are active
 {{- end }}

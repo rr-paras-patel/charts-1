@@ -38,6 +38,20 @@ aggregatorProps:
   enabled: false
   port: 9191
 
+# HttpRecorder is a frontend layer which can consume logs with both http and tcp protocols
+# It is deployed as a sidecar for each ED agent. It dumps the incoming logs to filesystem (persisted via PVC) and agents grab from there.
+httpRecorderProps:
+  enabled: false
+  image: gcr.io/edgedelta/httprecorder:latest
+  port: 8080
+
+  # Enable ingress if the k8s cluster already has nginx + cert-manager installed
+  # Without ingress enabled you can directly send logs within cluster using http://ed-httprecorder-svc.{namespace}.svc.cluster.local:8080
+  ingress:
+    enabled: false
+    host: ""
+    class: nginx
+
 # Custom environment variables:
 
 # envs:
