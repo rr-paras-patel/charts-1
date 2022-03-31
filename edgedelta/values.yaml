@@ -37,6 +37,12 @@ persistingCursorProps:
 aggregatorProps: 
   enabled: false
   port: 9191
+  # serviceDNSSuffix is "svc.cluster.local" by default. It's used to construct endpoint for aggregator agent service so that processor agents can communicate with aggregator.
+  # Final endpoint looks like this: http://ed-aggregator-svc.my-namespace.svc.cluster.local:9191
+  serviceDNSSuffix: "svc.cluster.local"
+  # aggregator agent needs a small amount of disk space to persist some internal source related information to be able to work smoothly after restarts/upgrades.
+  # If your k8s cluster has specific storage classes you can set storageClassName accordingly.
+  storageClassName: ""
 
 # HttpRecorder is a frontend layer which can consume logs with both http and tcp protocols
 # It is deployed as a sidecar for each ED agent. It dumps the incoming logs to filesystem (persisted via PVC) and agents grab from there.

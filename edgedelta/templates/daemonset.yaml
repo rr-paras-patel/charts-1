@@ -126,7 +126,7 @@ spec:
             - name: ED_AGENT_MODE
               value: processor
             - name: ED_AGGREGATOR_DESTINATION
-              value: "http://ed-aggregator-svc.{{.Release.Namespace}}.svc.cluster.local:{{.Values.aggregatorProps.port}}"
+              value: "http://ed-aggregator-svc.{{.Release.Namespace}}.{{.Values.aggregatorProps.serviceDNSSuffix}}:{{.Values.aggregatorProps.port}}"
             {{- end }}
             {{- if .Values.httpRecorderProps.enabled }}
             - name: POD_NAME
