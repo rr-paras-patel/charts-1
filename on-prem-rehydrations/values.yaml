@@ -1,0 +1,85 @@
+# Default values for edgedelta on-prem rehydrations.
+orgId: ""
+
+# Use either remoteToken or secretRemoteToken but NOT both to provide remote token to on-prem rehydrations:
+remoteToken: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+# secretRemoteToken:
+#   name: "ed-rehydration-token"
+#   key: "eed-rehydration-token"
+
+# Create secret api key command:
+# kubectl create secret generic ed-rehydration-token --namespace=edgedelta-rehydration --from-literal=ed-api-key="YOUR_API_KEY"
+
+openFaas:
+  enabled: false
+  minRehydrationCount: 1
+
+rehydrationPoller:
+  pollInterval: 10s
+  apiEndpoint: "https://api.edgedelta.com"
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  annotations: {}
+
+  # Helm overrides
+  image:
+    name: gcr.io/edgedelta/rehydrationpoller
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+rehydrationHandler:
+  port: 8080
+  mode: "prod"
+  pushBatchSize: "10000"
+  isRemoteRepository: true
+  remoteRepositoryMode: "hybrid-on-prem"
+  memoryThreshold: "15G"
+
+  # Resource constraints
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 16000Mi
+    requests:
+      cpu: 1000m
+      memory: 16000Mi
+
+  annotations: {}
+  # Helm overrides
+  image:
+    name: gcr.io/edgedelta/function
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+openfaas:
+  functionNamespace: "edgedelta-rehydration"
+  serviceType: "NodePort"
+  basic_auth: false
+  generateBasicAuth: false
+  openfaasPRO: false
+  ceScaling: false
+  faasnetes:
+    readTimeout: "1h5m"
+    writeTimeout: "1h5m"
+
+  gateway:
+    readTimeout: "1h5m"
+    writeTimeout: "1h5m"
+    upstreamTimeout: "1h"  # Must be smaller than read/write_timeout
+
+  queueWorkerPro:
+    enabled: false
+
+  queueWorker:
+    ackWait: "1h"

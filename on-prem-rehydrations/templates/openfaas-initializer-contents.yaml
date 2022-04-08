@@ -1,0 +1,70 @@
+{{- if .Values.openFaas.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "edgedelta.fullname" . }}-openfaas-initializer-contents
+  namespace: {{ .Release.Namespace }}
+data:
+  function-config.yml: |-
+    # reference https://docs.openfaas.com/reference/yaml/
+    version: 1.0
+    provider:
+      name: openfaas
+      gateway: http://gateway.{{ .Release.Namespace }}.svc.cluster.local:8080
+    functions:
+      rehydrate:
+        skip_build: true
+        image: {{ .Values.rehydrationHandler.image.name }}:{{ .Values.rehydrationHandler.image.tag | default .Chart.AppVersion }}
+        limits:
+        {{- toYaml .Values.rehydrationHandler.resources.limits | nindent 10 }}
+        requests:
+        {{- toYaml .Values.rehydrationHandler.resources.requests | nindent 10 }}
+        environment:
+          ED_MODE: {{ .Values.rehydrationHandler.mode | quote }}
+          ED_REHYDRATION_PUSH_BATCH_SIZE: {{ .Values.rehydrationHandler.pushBatchSize | quote }}
+          ED_HANDLER_NAME: "rehydrate"
+          {{- if .Values.rehydrationHandler.isRemoteRepository }}
+          ED_REMOTE_REPOSITORY: "1"
+          ED_REMOTE_REPOSITORY_MODE: {{ .Values.rehydrationHandler.remoteRepositoryMode | quote }}
+          {{- end }}
+          ED_REHYDRATION_API_ENDPOINT: {{ .Values.rehydrationPoller.apiEndpoint | quote }}
+          {{- if .Values.remoteToken }}
+          ED_REMOTE_TOKEN: {{ .Values.remoteToken | quote }}
+          {{- end }}
+          {{- if .Values.secretRemoteToken }}
+          {{- if .Values.secretRemoteToken.name }}
+          ED_REMOTE_TOKEN_FILE: /var/openfaas/secrets/{{ .Values.secretRemoteToken.name }}
+          {{- end }}
+          {{- end }}
+          ED_REHYDRATION_MEMORY_THRESHOLD: {{ .Values.rehydrationHandler.memoryThreshold }} # This value should be less than memory limit of the pod, ideally 90% of the limit
+          GOGC: 20
+          GODEBUG: madvdontneed=1
+        secrets:
+          {{- if .Values.secretRemoteToken }}
+          {{- if .Values.secretRemoteToken.name }}
+          - {{ .Values.secretRemoteToken.name | quote }}
+          {{- end }}
+          {{- end }}
+        labels:
+          com.openfaas.scale.min: {{ .Values.openFaas.minRehydrationCount }}
+          com.openfaas.scale.max: {{ add .Values.openFaas.minRehydrationCount (div .Values.openFaas.minRehydrationCount 2) }}
+          com.openfaas.scale.factor: 50
+          com.openfaas.scale.zero: true
+          openfaas-fn: rehydrate
+        annotations:
+          com.openfaas.health.http.path: "/healthz"
+          com.openfaas.health.http.initialDelay: "5s"
+      echofaas:
+        skip_build: true
+        image: {{ .Values.rehydrationHandler.image.name }}:{{ .Values.rehydrationHandler.image.tag | default .Chart.AppVersion }}
+        environment:
+          ED_HANDLER_NAME: echo
+        labels:
+          com.openfaas.scale.min: 1
+          com.openfaas.scale.max: 1
+          com.openfaas.scale.zero: false
+          openfaas-fn: echofaas
+        annotations:
+        com.openfaas.health.http.path: "/healthz"
+        com.openfaas.health.http.initialDelay: "5s"
+{{- end }}

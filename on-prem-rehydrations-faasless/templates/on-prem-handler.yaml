@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "edgedelta.fullname" . }}-rehydration-handler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s-app: rehydration-handler
+    {{- include "edgedelta.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: rehydration-handler
+      {{- include "edgedelta.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+      {{- if .Values.rehydrationHandler.annotations }}
+        {{- toYaml .Values.rehydrationHandler.annotations | nindent 8 }}
+      {{- end }}
+      labels:
+        k8s-app: rehydration-handler
+        {{- include "edgedelta.labels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: {{ .Chart.Name }}-handler
+        image: {{ .Values.rehydrationHandler.image.name }}:{{ .Values.rehydrationHandler.image.tag | default .Chart.AppVersion }}
+        ports:
+          - containerPort: {{ .Values.rehydrationHandler.port }}
+        command:
+          - /edgedelta/faas
+        env:
+          - name: ED_MODE
+            value: "{{ .Values.rehydrationHandler.mode }}"
+          - name: ED_REHYDRATION_PUSH_BATCH_SIZE
+            value: "{{ .Values.rehydrationHandler.pushBatchSize }}"
+          - name: ED_HANDLER_NAME
+            value: "rehydrate"
+          {{- if .Values.rehydrationHandler.isRemoteRepository }}
+          - name: ED_REMOTE_REPOSITORY
+            value: "1"
+          - name: ED_REMOTE_REPOSITORY_MODE
+            value: "{{ .Values.rehydrationHandler.remoteRepositoryMode }}"
+          {{- end }}
+          {{- if .Values.remoteToken }}
+          - name: ED_REMOTE_TOKEN
+            value: "{{ .Values.remoteToken }}"
+          {{- end }}
+          {{- if .Values.secretRemoteToken }}
+          {{- if .Values.secretRemoteToken.name }}
+          - name: ED_REMOTE_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretRemoteToken.name }}
+                key: {{ .Values.secretRemoteToken.key }}
+          {{- end }}
+          {{- end }}
+          - name: ED_REHYDRATION_MEMORY_THRESHOLD
+            value: {{ .Values.rehydrationHandler.memoryThreshold }} # This value should be less than memory limit of the pod, ideally 90% of the limit
+          - name: GOGC
+            value: "20"
+          - name: GODEBUG
+            value: madvdontneed=1
+        resources:
+          {{- toYaml .Values.rehydrationHandler.resources | nindent 10 }}
+        imagePullPolicy: Always
