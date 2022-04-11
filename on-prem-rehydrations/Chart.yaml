@@ -8,4 +8,4 @@ dependencies:
   - name: openfaas
     repository: https://openfaas.github.io/faas-netes
     version: 10.0.7
-    condition: useFaasVersion
+    condition: openFaas.enabled

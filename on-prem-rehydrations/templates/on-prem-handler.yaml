@@ -38,6 +38,10 @@ spec:
             value: {{ .Values.rehydrationHandler.pushBatchSize | quote }}
           - name: ED_HANDLER_NAME
             value: "rehydrate"
+          {{- if .Values.rehydrationPoller.apiEndpoint }}
+          - name: ED_REHYDRATION_API_ENDPOINT
+            value: {{ .Values.rehydrationPoller.apiEndpoint | quote }}
+          {{- end }}
           {{- if .Values.rehydrationHandler.isRemoteRepository }}
           - name: ED_REMOTE_REPOSITORY
             value: "1"

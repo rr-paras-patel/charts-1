@@ -33,8 +33,10 @@ spec:
             value: "{{ .Values.rehydrationPoller.pollInterval }}"
           - name: ED_ORG_ID
             value: "{{ .Values.orgId }}"
+          {{- if .Values.rehydrationPoller.apiEndpoint }}
           - name: ED_API_ENDPOINT
             value: {{ .Values.rehydrationPoller.apiEndpoint | quote }}
+          {{- end }}
           {{- if .Values.openFaas.enabled }}
           - name: ED_OPENFAAS_GATEWAY
             value: "http://gateway-external.{{ .Release.Namespace }}.svc.cluster.local:8080"

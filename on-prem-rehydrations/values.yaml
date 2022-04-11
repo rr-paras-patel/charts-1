@@ -9,7 +9,7 @@ fullnameOverride: ""
 
 # secretRemoteToken:
 #   name: "ed-rehydration-token"
-#   key: "eed-rehydration-token"
+#   key: "ed-rehydration-token"
 
 # Create secret api key command:
 # kubectl create secret generic ed-rehydration-token --namespace=edgedelta-rehydration --from-literal=ed-api-key="YOUR_API_KEY"
