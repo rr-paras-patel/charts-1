@@ -1,0 +1,59 @@
+{{- if .Values.app.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-ui-deployment
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    k8s-app: admin-ui
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.app.replicaCount | default 4 }}
+  selector:
+    matchLabels:
+      k8s-app: admin-ui
+  template:
+    metadata:
+      labels:
+        k8s-app: admin-ui
+        {{- include "edgedelta.onprem.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: app
+        image: gcr.io/edgedelta/app:on-prem-{{ .Chart.AppVersion }}
+        ports:
+          - containerPort: {{ .Values.app.port | default 5555 }}
+        env:
+          - name: ED_ON_PREM_API_URL
+          {{- if .Values.app.overrideApiUrl }}
+            value: {{ .Values.app.overrideApiUrl | quote }}
+          {{- else }}
+            value: "https://{{ .Values.api.hostName }}"
+          {{- end }}
+          - name: ED_CONFIG_WIZARD_ID
+            value: "f9085b59-7c81-4197-bc0a-cac8a839832c"
+          - name: OKTA_AUTH_CLIENT_ID
+            value: {{ .Values.okta.clientId | quote }}
+          - name: OKTA_AUTH_REDIRECT_URL
+            value: {{ .Values.okta.redirectUrl | quote }}
+          - name: ED_FRONTEND_PORT
+            value: {{ .Values.app.port | default 5555 | quote }}
+        command:
+          - /configure-site-run-nginx.sh
+        resources:
+          {{- toYaml .Values.app.resources | nindent 12 }}
+        imagePullPolicy: Always
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: admin-ui-service
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  selector:
+    k8s-app: admin-ui
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+  ports:
+    - port: {{ .Values.app.port | default 5555 }}
+      name: ui
+{{- end }}

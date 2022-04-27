@@ -1,0 +1,51 @@
+{{- if .Values.rehydration.pollerOptions.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rehydration-poller
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    k8s-app: rehydration-poller
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: rehydration-poller
+  template:
+    metadata:
+      labels:
+        k8s-app: rehydration-poller
+        {{- include "edgedelta.onprem.labels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: rehydration-poller
+        image: gcr.io/edgedelta/rehydrationpoller:{{ .Chart.AppVersion }}
+        command:
+          - /edgedelta/rehydrationpoller
+        env:
+          - name: ED_REHYDRATION_POLL_INTERVAL
+            value: {{ .Values.rehydration.pollerOptions.pollInterval | default "10s" | quote }}
+          - name: ED_ORG_ID
+            value: {{ .Values.rehydration.orgId | quote }}
+          - name: ED_API_ENDPOINT
+            value: {{ .Values.rehydration.apiEndpoint | quote }}
+          {{- if .Values.openFaas.enabled }}
+          - name: ED_OPENFAAS_GATEWAY
+            value: "http://gateway-external.{{ .Release.Namespace }}.svc.cluster.local:8080"
+          {{- else }}
+          - name: ED_REHYDRATE_DIRECT_ENDPOINT
+            value: "http://rehydration-handler-service.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.rehydration.handlerOptions.port | default 8080 }}"
+          - name: ED_DISABLE_OPENFAAS
+            value: "1"
+          {{- end }}
+          - name: ED_REMOTE_TOKEN
+            valueFrom:
+              secretKeyRef:
+                key: {{ .Values.rehydration.tokenSecretName | default "ed-rehydration-token" | quote }}
+                name: {{ .Values.rehydration.tokenSecretName | default "ed-rehydration-token" | quote }}
+        resources:
+          {{- toYaml .Values.rehydration.pollerOptions.resources | nindent 10 }}
+        imagePullPolicy: Always
+{{- end }}

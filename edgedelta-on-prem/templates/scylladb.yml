@@ -1,0 +1,83 @@
+{{- if .Values.scylla.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scylladb
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    k8s-app: scylladb
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: scylladb
+  template:
+    metadata:
+      labels:
+        k8s-app: scylladb
+        {{- include "edgedelta.onprem.labels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: scylladb
+        image: scylladb/scylla:latest
+        args:
+        - --alternator-port=8000
+        - --alternator-write-isolation=always
+        resources:
+          {{- toYaml .Values.scylla.resources | nindent 12 }}
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: scylladb-config
+            mountPath: /etc/scylla
+          - name: scylladb-data
+            mountPath: /var/lib/scylla
+      volumes:
+        - name: scylladb-config
+          configMap:
+            name: scylladb-config
+        - name: scylladb-data
+          persistentVolumeClaim:
+            claimName: scylladb-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scylladb-service
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: alternator
+      port: 8000
+    - name: cassandra
+      port: 9042
+  selector:
+    k8s-app: scylladb
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scylladb-config
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+data:
+  scylla.yaml: |
+    {{- .Values.scylla.config | nindent 4 }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: scylladb-data
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    {{- toYaml .Values.scylla.storageResources | nindent 4 }}
+{{- end }}

@@ -1,0 +1,73 @@
+{{- if and (not .Values.openFaas.enabled) .Values.rehydration.handlerOptions.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rehydration-handler
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    k8s-app: rehydration-handler
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: rehydration-handler
+  template:
+    metadata:
+      labels:
+        k8s-app: rehydration-handler
+        {{- include "edgedelta.onprem.labels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: rehydration-handler
+        image: gcr.io/edgedelta/function:{{ .Chart.AppVersion }}
+        ports:
+          - containerPort: {{ .Values.rehydration.handlerOptions.port | default 8080 }}
+        command:
+          - /edgedelta/faas
+        env:
+          - name: ED_MODE
+            value: {{ .Values.rehydration.mode | default "prod" | quote }}
+          - name: ED_REHYDRATION_PUSH_BATCH_SIZE
+            value: {{ .Values.rehydration.pushBatchSize | default "10000" | quote }}
+          - name: ED_HANDLER_NAME
+            value: "rehydrate"
+          - name: ED_REHYDRATION_API_ENDPOINT
+            value: {{ .Values.rehydration.apiEndpoint | quote }}
+          - name: ED_REMOTE_REPOSITORY
+            value: "1"
+          - name: ED_REMOTE_REPOSITORY_MODE
+            value: "hybrid-on-prem"
+          - name: ED_REMOTE_TOKEN
+            valueFrom:
+              secretKeyRef:
+                key: {{ .Values.rehydration.tokenSecretName | default "ed-rehydration-token" | quote }}
+                name: {{ .Values.rehydration.tokenSecretName | default "ed-rehydration-token" | quote }}
+          - name: ED_REHYDRATION_MEMORY_THRESHOLD
+            value: "{{ div (mul (.Values.rehydration.memoryLimit | default 16) 9) 10 }}G" # This value should be less than memory limit of the pod, ideally 90% of the limit
+          - name: GOGC
+            value: "20"
+          - name: GODEBUG
+            value: "madvdontneed=1"
+        resources:
+          limits:
+            cpu: {{ .Values.rehydration.handlerOptions.cpuLimit | default "2000m" }}
+            memory: {{ .Values.rehydration.memoryLimit | default 16 }}Gi
+          requests:
+            cpu: {{ .Values.rehydration.handlerOptions.cpuRequest | default "1000m" }}
+            memory: {{ .Values.rehydration.memoryLimit | default 16 }}Gi
+        imagePullPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rehydration-handler-service
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.rehydration.handlerOptions.port | default 8080 }}
+  selector:
+    k8s-app: rehydration-handler
+{{- end }}

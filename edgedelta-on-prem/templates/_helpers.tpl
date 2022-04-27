@@ -1,19 +1,12 @@
 {{/* vim: set filetype=mustache: */}}
 {{/*
-Expand the name of the chart.
-*/}}
-{{- define "edgedelta.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "edgedelta.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- define "edgedelta.onprem.fullname" -}}
+{{- if .Values.fullNameOverride }}
+{{- .Values.fullNameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
 {{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
@@ -27,26 +20,25 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "edgedelta.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- define "edgedelta.onprem.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" | quote }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "edgedelta.labels" -}}
-helm.sh/chart: {{ include "edgedelta.chart" . }}
-{{ include "edgedelta.selectorLabels" . }}
+{{- define "edgedelta.onprem.labels" -}}
+helm.sh/chart: {{ include "edgedelta.onprem.chart" . }}
+{{ include "edgedelta.onprem.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
 {{- end }}
 
 {{/*
 Selector labels
 */}}
-{{- define "edgedelta.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "edgedelta.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{- define "edgedelta.onprem.selectorLabels" -}}
+app.kubernetes.io/instance: {{ .Release.Name | quote }}
 {{- end }}

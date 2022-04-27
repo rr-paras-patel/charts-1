@@ -1,0 +1,156 @@
+{{- if .Values.openFaas.enabled }}
+{{- if and .Values.openfaas.functionNamespace (ne .Values.openfaas.functionNamespace .Release.Namespace) }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.openfaas.functionNamespace | quote }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: hook-failed
+{{- end }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openfaas-initializer
+  namespace: {{ .Release.Namespace | quote }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "1"
+    helm.sh/hook-delete-policy: hook-succeeded,hook-failed
+  labels:
+    k8s-app: openfaas-initializer
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 4
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: openfaas-initializer
+        {{- include "edgedelta.onprem.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "edgedelta.onprem.fullname" . | quote }}
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: openfaas-initializer
+        image: gcr.io/edgedelta/faas-init:2022-02-18-10-30-00
+        command:
+          - /bin/bash
+          - -c
+          - |
+            set -e;
+
+            retry() {
+              TRY_COUNT=0
+              until "$@"
+              do
+                ((TRY_COUNT++))
+                if [[ TRY_COUNT -ge 30 ]];then
+                  echo "Failed executing \"$@\" 30 times, giving up."
+                  return 1
+                fi
+                echo "...retrying"
+                sleep 10
+              done
+            }
+
+            {{- if .Values.openFaas.isFullDeployment }}
+            accessKeyIdSecret={{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" | quote }}
+            secretKeySecret={{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
+
+            # Retry until desired secrets are created
+            retry kubectl get secret $accessKeyIdSecret -n {{ .Release.Namespace }} && kubectl get secret $secretKeySecret -n {{ .Release.Namespace }}
+            {{- end }}
+
+            export OPENFAAS_URL=http://gateway.{{ .Release.Namespace }}.svc.cluster.local:8080
+            retry faas deploy -f /var/lib/edgedelta/function-config.yml
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: openfaas-initializer-contents
+            mountPath: /var/lib/edgedelta
+      volumes:
+        - name: openfaas-initializer-contents
+          configMap:
+            name: openfaas-initializer-contents
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openfaas-initializer-contents
+  namespace: {{ .Release.Namespace | quote }}
+data:
+  function-config.yml: |-
+    # reference https://docs.openfaas.com/reference/yaml/
+    version: 1.0
+    provider:
+      name: openfaas
+      gateway: http://gateway.{{ .Release.Namespace }}.svc.cluster.local:8080
+    functions:
+      rehydrate:
+        skip_build: true
+        image: gcr.io/edgedelta/function:{{ .Chart.AppVersion }}
+        limits:
+          cpu: 2000m
+          memory: {{ .Values.rehydration.memoryLimit }}Gi
+        requests:
+          cpu: 1000m
+          memory: {{ .Values.rehydration.memoryLimit }}Gi
+        environment:
+          ED_MODE: {{ .Values.rehydration.mode | default "prod" | quote }}
+          ED_REHYDRATION_PUSH_BATCH_SIZE: {{ .Values.rehydration.pushBatchSize | default "10000" | quote }}
+          ED_HANDLER_NAME: "rehydrate"
+          ED_REMOTE_REPOSITORY: "1"
+          {{- if .Values.openFaas.isFullDeployment }}
+          ED_REMOTE_REPOSITORY_MODE: "full-on-prem"
+          ED_ON_PREM_DYNAMO_ACCESS_KEY_ID_FILE: "/var/openfaas/secrets/{{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" }}"
+          ED_ON_PREM_DYNAMO_SECRET_KEY_FILE: "/var/openfaas/secrets/{{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" }}"
+          ED_ON_PREM_DYNAMO_ENDPOINT: "http://scylladb-service.{{ .Release.Namespace }}.svc.cluster.local:8000"
+          {{- else }}
+          ED_REMOTE_REPOSITORY_MODE: "hybrid-on-prem"
+          ED_REHYDRATION_API_ENDPOINT: {{ .Values.rehydration.apiEndpoint | quote }}
+          ED_REMOTE_TOKEN_FILE: "/var/openfaas/secrets/{{ .Values.rehydration.tokenSecretName | default "ed-rehydration-token" }}"
+          {{- end }}
+          ED_REHYDRATION_MEMORY_THRESHOLD: "{{ div (mul .Values.rehydration.memoryLimit 9) 10 }}G" # This value should be less than memory limit of the pod, ideally 90% of the limit
+          GOGC: "20"
+          GODEBUG: "madvdontneed=1"
+        secrets:
+        {{- if .Values.openFaas.isFullDeployment }}
+          - {{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" | quote }}
+          - {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
+        {{- else }}
+          - {{ .Values.rehydration.tokenSecretName | default "ed-rehydration-token" | quote }}
+        {{- end }}
+        labels:
+          com.openfaas.scale.min: {{ .Values.openFaas.minRehydrationCount }}
+          com.openfaas.scale.max: {{ add .Values.openFaas.minRehydrationCount (div .Values.openFaas.minRehydrationCount 2) }}
+          com.openfaas.scale.factor: 50
+          com.openfaas.scale.zero: true
+          openfaas-fn: rehydrate
+        annotations:
+          com.openfaas.health.http.path: "/healthz"
+          com.openfaas.health.http.initialDelay: "5s"
+      echofaas:
+        skip_build: true
+        image: gcr.io/edgedelta/function:{{ .Chart.AppVersion }}
+        environment:
+          ED_HANDLER_NAME: echo
+        labels:
+          com.openfaas.scale.min: 1
+          com.openfaas.scale.max: 1
+          com.openfaas.scale.zero: false
+          openfaas-fn: echofaas
+        annotations:
+        com.openfaas.health.http.path: "/healthz"
+        com.openfaas.health.http.initialDelay: "5s"
+{{- end }}

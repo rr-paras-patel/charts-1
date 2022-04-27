@@ -1,0 +1,167 @@
+fullNameOverride: ""
+
+openFaas: # valid for all deployment types
+  enabled: true
+  minRehydrationCount: 1
+  isFullDeployment: true
+  proLicense: ""
+
+ingress:
+  enabled: true
+
+clusterIssuer:
+  enabled: true
+  letsEncryptEmail: ""
+
+# This section will be used by both API and UI component
+# These needs to be set in advance by using Okta admin panel and generating a new application
+okta:
+  token: ""
+  clientId: ""
+  newUserPassword: ""
+  redirectUrl: ""
+
+api:
+  enabled: true
+  masterSecret: "" # It will use a randomly-generated UUIDv4 if not set
+  port: 4444
+  hostName: ""
+
+  replicaCount: 4
+  resources:
+    limits:
+      cpu: 1024m
+      memory: 2048Mi
+    requests:
+      cpu: 512m
+      memory: 256Mi
+
+app:
+  enabled: true
+  port: 5555
+  hostName: ""
+  overrideApiUrl: "" # default is https://<api_host_name>, however if this field is not empty, we will override api url with given one
+
+  replicaCount: 3
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 20Mi
+
+rehydration:
+  orgId: ""
+  mode: "prod"
+  pushBatchSize: "10000"
+  token: ""
+  tokenSecretName: "ed-rehydration-token"
+  apiEndpoint: "" # it should be empty for "full" deployment mode. Default is https://api.edgedelta.com
+  memoryLimit: 16 # In terms of GB
+
+  pollerOptions: # only valid if deployment mode is "only_rehydration"
+    enabled: false
+    pollInterval: 10s
+
+    resources:
+      limits:
+        cpu: 200m
+        memory: 200Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+
+  handlerOptions: # only valid if deployment mode is "only_rehydration"
+    enabled: false
+    port: 8080
+
+    cpuRequest: 1000m
+    cpuLimit: 2000m
+
+initializer:
+  enabled: true
+
+  accessKeyIdName: "ed-scylladb-access-key-id"
+  secretKeyName: "ed-scylladb-secret-key"
+  configMapName: "ed-bootstrap-status"
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+# rest is the configuration for third party dependencies and Helm charts
+scylla:
+  enabled: true
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 2Gi
+
+  storageResources:
+    requests:
+      storage: 10Gi
+
+  config: |
+    num_tokens: 256
+    commitlog_sync: periodic
+    commitlog_sync_period_in_ms: 10000
+    commitlog_segment_size_in_mb: 32
+    seed_provider:
+        - class_name: org.apache.cassandra.locator.SimpleSeedProvider
+          parameters:
+              - seeds: "127.0.0.1"
+    listen_address: localhost
+    native_transport_port: 9042
+    native_shard_aware_transport_port: 19042
+    read_request_timeout_in_ms: 5000
+    write_request_timeout_in_ms: 2000
+    cas_contention_timeout_in_ms: 1000
+    endpoint_snitch: SimpleSnitch
+    alternator_enforce_authorization: true
+    rpc_address: localhost
+    rpc_port: 9160
+    api_port: 10000
+    api_address: 127.0.0.1
+    batch_size_warn_threshold_in_kb: 128
+    batch_size_fail_threshold_in_kb: 1024
+    partitioner: org.apache.cassandra.dht.Murmur3Partitioner
+    commitlog_total_space_in_mb: -1
+    murmur3_partitioner_ignore_msb_bits: 12
+
+openfaas:
+  functionNamespace: "openfaas-fn" # it should be renamed as helm namespace
+  serviceType: "NodePort"
+  basic_auth: false
+  generateBasicAuth: false # set to true when license is not empty
+  openfaasPro: false # set to true when license is not empty
+  ceScaling: false
+  autoscaler:
+    enabled: false # set to true when license is not empty
+  clusterRole: false # set to true when license is not empty
+  faasnetes:
+    readTimeout: "1h5m"
+    writeTimeout: "1h5m"
+  gateway:
+    readTimeout: "1h5m"
+    writeTimeout: "1h5m"
+    upstreamTimeout: "1h"  # Must be smaller than read/write_timeout
+  queueWorkerPro:
+    enabled: false # set to true when license is not empty
+  queueWorker:
+    ackWait: "1h"
+
+ingress-nginx:
+  controller:
+    replicaCount: 1
+
+cert-manager:
+  installCRDs: true

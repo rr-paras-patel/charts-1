@@ -1,0 +1,88 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-api-deployment
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    k8s-app: admin-api
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.api.replicaCount | default 4 }}
+  selector:
+    matchLabels:
+      k8s-app: admin-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: # update pods 1 by 1
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: admin-api
+        {{- include "edgedelta.onprem.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "edgedelta.onprem.fullname" . | quote }}
+      containers:
+      - name: api
+        image: gcr.io/edgedelta/admin:on-prem-{{ .Chart.AppVersion }}
+        ports:
+          - containerPort: {{ .Values.api.port | default 4444 }}
+        env:
+          - name: ED_MODE
+            value: prod
+          - name: ED_SECRET_PROVIDER
+            value: env
+          - name: ED_BACKEND_ON_PREMISE
+            value: "1"
+          - name: ED_THROTTLE_ENABLED
+            value: "0"
+          - name: ED_DATABASE_TABLE_NAME_PREFIX
+            value: "ed"
+          - name: API_TOKEN_MASTER_SECRET
+            value: {{ .Values.api.masterSecret | default uuidv4 | quote }}
+          - name: OKTA_TOKEN
+            value: {{ .Values.okta.token | quote }}
+          - name: OKTA_CLIENT_ID
+            value: {{ .Values.okta.clientId | quote }}
+          - name: OKTA_NEW_USER_PASSWORD
+            value: {{ .Values.okta.newUserPassword | quote }}
+          - name: BACKEND_ON_PREMISE_DYNAMO_ENDPOINT
+            value: http://scylladb-service.{{ .Release.Namespace }}.svc.cluster.local:8000
+          - name: BACKEND_ON_PREMISE_DYNAMO_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                key: {{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" | quote }}
+                name: {{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" | quote }}
+          - name: BACKEND_ON_PREMISE_DYNAMO_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                key: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
+                name: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
+          - name: ED_OPENFAAS_GATEWAY
+            value: "http://gateway-external.{{ .Release.Namespace }}.svc.cluster.local:8080"
+        command:
+          - /edgedelta/admin
+        args:
+          - --region
+          - None
+          - --api_port
+          - {{ .Values.api.port | default 4444 | quote }}
+        resources:
+          {{- toYaml .Values.api.resources | nindent 12 }}
+        imagePullPolicy: Always
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: admin-api-service
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  selector:
+    k8s-app: admin-api
+    {{- include "edgedelta.onprem.labels" . | nindent 4 }}
+  ports:
+    - port: {{ .Values.api.port | default 4444 }}
+      name: api
+{{- end }}

@@ -1,0 +1,29 @@
+{{- if .Values.clusterIssuer.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: label-ns
+  namespace: kube-system
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: hook-succeeded,hook-failed
+spec:
+  template:
+    spec:
+      containers:
+      - name: labeler
+        image: gcr.io/google_containers/hyperkube:v1.9.7
+        command:
+        - kubectl
+        - label
+        - ns
+        - {{ .Release.Namespace }}
+        - cert-manager.io/disable-validation=true
+      restartPolicy: Never
+      # use tiller service account since it should have permissions to do namespace labeling
+      serviceAccountName: tiller
+{{- end }}
