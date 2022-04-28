@@ -1,4 +1,5 @@
 fullNameOverride: ""
+dnsSuffix: "svc.cluster.local"
 
 openFaas: # valid for all deployment types
   enabled: true

@@ -65,7 +65,7 @@ spec:
             retry kubectl get secret $accessKeyIdSecret -n {{ .Release.Namespace }} && kubectl get secret $secretKeySecret -n {{ .Release.Namespace }}
             {{- end }}
 
-            export OPENFAAS_URL=http://gateway.{{ .Release.Namespace }}.svc.cluster.local:8080
+            export OPENFAAS_URL=http://gateway.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8080
             retry faas deploy -f /var/lib/edgedelta/function-config.yml
         resources:
           limits:
@@ -95,7 +95,7 @@ data:
     version: 1.0
     provider:
       name: openfaas
-      gateway: http://gateway.{{ .Release.Namespace }}.svc.cluster.local:8080
+      gateway: http://gateway.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8080
     functions:
       rehydrate:
         skip_build: true
@@ -112,10 +112,11 @@ data:
           ED_HANDLER_NAME: "rehydrate"
           ED_REMOTE_REPOSITORY: "1"
           {{- if .Values.openFaas.isFullDeployment }}
+          ED_DATABASE_TABLE_NAME_PREFIX: "ed"
           ED_REMOTE_REPOSITORY_MODE: "full-on-prem"
           ED_ON_PREM_DYNAMO_ACCESS_KEY_ID_FILE: "/var/openfaas/secrets/{{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" }}"
           ED_ON_PREM_DYNAMO_SECRET_KEY_FILE: "/var/openfaas/secrets/{{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" }}"
-          ED_ON_PREM_DYNAMO_ENDPOINT: "http://scylladb-service.{{ .Release.Namespace }}.svc.cluster.local:8000"
+          ED_ON_PREM_DYNAMO_ENDPOINT: "http://scylladb-service.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8000"
           {{- else }}
           ED_REMOTE_REPOSITORY_MODE: "hybrid-on-prem"
           ED_REHYDRATION_API_ENDPOINT: {{ .Values.rehydration.apiEndpoint | quote }}

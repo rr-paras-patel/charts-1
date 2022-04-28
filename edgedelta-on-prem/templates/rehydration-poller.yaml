@@ -33,10 +33,10 @@ spec:
             value: {{ .Values.rehydration.apiEndpoint | quote }}
           {{- if .Values.openFaas.enabled }}
           - name: ED_OPENFAAS_GATEWAY
-            value: "http://gateway-external.{{ .Release.Namespace }}.svc.cluster.local:8080"
+            value: "http://gateway-external.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8080"
           {{- else }}
           - name: ED_REHYDRATE_DIRECT_ENDPOINT
-            value: "http://rehydration-handler-service.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.rehydration.handlerOptions.port | default 8080 }}"
+            value: "http://rehydration-handler-service.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:{{ .Values.rehydration.handlerOptions.port | default 8080 }}"
           - name: ED_DISABLE_OPENFAAS
             value: "1"
           {{- end }}

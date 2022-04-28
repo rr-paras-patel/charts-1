@@ -49,7 +49,7 @@ spec:
           - name: OKTA_NEW_USER_PASSWORD
             value: {{ .Values.okta.newUserPassword | quote }}
           - name: BACKEND_ON_PREMISE_DYNAMO_ENDPOINT
-            value: http://scylladb-service.{{ .Release.Namespace }}.svc.cluster.local:8000
+            value: http://scylladb-service.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8000
           - name: BACKEND_ON_PREMISE_DYNAMO_ACCESS_KEY_ID
             valueFrom:
               secretKeyRef:
@@ -61,7 +61,7 @@ spec:
                 key: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
                 name: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
           - name: ED_OPENFAAS_GATEWAY
-            value: "http://gateway-external.{{ .Release.Namespace }}.svc.cluster.local:8080"
+            value: "http://gateway-external.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8080"
         command:
           - /edgedelta/admin
         args:
