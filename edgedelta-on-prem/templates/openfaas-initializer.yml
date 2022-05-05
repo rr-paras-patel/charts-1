@@ -1,5 +1,6 @@
 {{- if .Values.openFaas.enabled }}
-{{- if and .Values.openfaas.functionNamespace (ne .Values.openfaas.functionNamespace .Release.Namespace) }}
+{{- $functionNamespace := (lookup "v1" "Namespace" "" .Values.openfaas.functionNamespace) }}
+{{- if and .Values.openfaas.functionNamespace (not $functionNamespace) }}
 apiVersion: v1
 kind: Namespace
 metadata:
