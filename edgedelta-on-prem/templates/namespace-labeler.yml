@@ -3,12 +3,12 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: label-ns
-  namespace: kube-system
+  namespace: {{ .Release.Namespace }}
   labels:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
   annotations:
-    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook: pre-install
     helm.sh/hook-weight: "0"
     helm.sh/hook-delete-policy: hook-succeeded,hook-failed
 spec:
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: labeler
-        image: gcr.io/google_containers/hyperkube:v1.9.7
+        image: bitnami/kubectl:1.22.9
         command:
         - kubectl
         - label
@@ -24,6 +24,5 @@ spec:
         - {{ .Release.Namespace }}
         - cert-manager.io/disable-validation=true
       restartPolicy: Never
-      # use tiller service account since it should have permissions to do namespace labeling
-      serviceAccountName: tiller
+      serviceAccountName: {{ include "edgedelta.onprem.fullname" . | quote }}
 {{- end }}

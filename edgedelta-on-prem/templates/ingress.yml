@@ -1,5 +1,5 @@
 {{- if .Values.ingress.enabled }}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: edgedelta-ingress
@@ -7,9 +7,9 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt
-    helm.sh/hook: post-install,post-upgrade
-    helm.sh/hook-weight: "-5"
-    helm.sh/hook-delete-policy: hook-succeeded,hook-failed
+    helm.sh/hook: post-install
+    helm.sh/hook-weight: "100"
+    helm.sh/hook-delete-policy: hook-failed
 spec:
   tls:
   - hosts:
@@ -23,14 +23,20 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: admin-api-service
-              servicePort: {{ .Values.api.port | default 4444 }}
+              service:
+                name: admin-api-service
+                port:
+                  number: {{ .Values.api.port | default 4444 }}
             path: /
+            pathType: Prefix
     - host: {{ .Values.app.hostName | quote }}
       http:
         paths:
           - backend:
-              serviceName: admin-ui-service
-              servicePort: {{ .Values.app.port | default 5555 }}
+              service:
+                name: admin-ui-service
+                port:
+                  number: {{ .Values.app.port | default 5555 }}
             path: /
+            pathType: Prefix
 {{- end }}

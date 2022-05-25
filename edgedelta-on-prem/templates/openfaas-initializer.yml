@@ -1,6 +1,5 @@
 {{- if .Values.openFaas.enabled }}
-{{- $functionNamespace := (lookup "v1" "Namespace" "" .Values.openfaas.functionNamespace) }}
-{{- if and .Values.openfaas.functionNamespace (not $functionNamespace) }}
+{{- if and .Values.openfaas.functionNamespace (ne .Values.openfaas.functionNamespace .Release.Namespace) }}
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -37,7 +36,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: openfaas-initializer
-        image: gcr.io/edgedelta/faas-init:2022-02-18-10-30-00
+        image: {{ .Values.repository }}/faas-init:2022-02-18-10-30-00
         command:
           - /bin/bash
           - -c
@@ -100,7 +99,7 @@ data:
     functions:
       rehydrate:
         skip_build: true
-        image: gcr.io/edgedelta/function:{{ .Chart.AppVersion }}
+        image: {{ .Values.repository }}/function:{{ .Chart.AppVersion }}
         limits:
           cpu: 2000m
           memory: {{ .Values.rehydration.memoryLimit }}Gi
@@ -124,6 +123,9 @@ data:
           ED_REMOTE_TOKEN_FILE: "/var/openfaas/secrets/{{ .Values.rehydration.tokenSecretName | default "ed-rehydration-token" }}"
           {{- end }}
           ED_REHYDRATION_MEMORY_THRESHOLD: "{{ div (mul .Values.rehydration.memoryLimit 9) 10 }}G" # This value should be less than memory limit of the pod, ideally 90% of the limit
+          ED_MAX_INFLIGHT: "1"
+          ED_REHYDRATION_BLOCK_TIMEOUT: 5m
+          STORE_PORT: "8085"
           GOGC: "20"
           GODEBUG: "madvdontneed=1"
         secrets:
@@ -144,7 +146,7 @@ data:
           com.openfaas.health.http.initialDelay: "5s"
       echofaas:
         skip_build: true
-        image: gcr.io/edgedelta/function:{{ .Chart.AppVersion }}
+        image: {{ .Values.repository }}/function:{{ .Chart.AppVersion }}
         environment:
           ED_HANDLER_NAME: echo
         labels:

@@ -22,7 +22,11 @@ spec:
       containers:
       - name: scylladb
         image: scylladb/scylla:latest
+        ports:
+          - containerPort: 8000
+          - containerPort: 9042
         args:
+        - --alternator-address=0.0.0.0
         - --alternator-port=8000
         - --alternator-write-isolation=always
         resources:

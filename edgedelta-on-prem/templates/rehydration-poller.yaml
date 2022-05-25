@@ -21,7 +21,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: rehydration-poller
-        image: gcr.io/edgedelta/rehydrationpoller:{{ .Chart.AppVersion }}
+        image: {{ .Values.repository }}/rehydrationpoller:{{ .Chart.AppVersion }}
         command:
           - /edgedelta/rehydrationpoller
         env:

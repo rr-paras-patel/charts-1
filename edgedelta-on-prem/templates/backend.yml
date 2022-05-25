@@ -26,7 +26,7 @@ spec:
       serviceAccountName: {{ include "edgedelta.onprem.fullname" . | quote }}
       containers:
       - name: api
-        image: gcr.io/edgedelta/admin:on-prem-{{ .Chart.AppVersion }}
+        image: {{ .Values.repository }}/admin:on-prem-{{ .Chart.AppVersion }}
         ports:
           - containerPort: {{ .Values.api.port | default 4444 }}
         env:

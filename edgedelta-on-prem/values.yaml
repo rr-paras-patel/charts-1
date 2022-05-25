@@ -1,5 +1,6 @@
 fullNameOverride: ""
 dnsSuffix: "svc.cluster.local"
+repository: "gcr.io/edgedelta"
 
 openFaas: # valid for all deployment types
   enabled: true
@@ -8,9 +9,11 @@ openFaas: # valid for all deployment types
   proLicense: ""
 
 ingress:
+  shouldInstall: true
   enabled: true
 
 clusterIssuer:
+  shouldInstall: true
   enabled: true
   letsEncryptEmail: ""
 
@@ -101,11 +104,11 @@ scylla:
 
   resources:
     limits:
-      cpu: 1000m
-      memory: 4Gi
+      cpu: 2000m
+      memory: 6Gi
     requests:
-      cpu: 500m
-      memory: 2Gi
+      cpu: 1000m
+      memory: 3Gi
 
   storageResources:
     requests:
@@ -117,9 +120,9 @@ scylla:
     commitlog_sync_period_in_ms: 10000
     commitlog_segment_size_in_mb: 32
     seed_provider:
-        - class_name: org.apache.cassandra.locator.SimpleSeedProvider
-          parameters:
-              - seeds: "127.0.0.1"
+      - class_name: org.apache.cassandra.locator.SimpleSeedProvider
+        parameters:
+          - seeds: "127.0.0.1"
     listen_address: localhost
     native_transport_port: 9042
     native_shard_aware_transport_port: 19042
@@ -130,8 +133,8 @@ scylla:
     alternator_enforce_authorization: true
     rpc_address: localhost
     rpc_port: 9160
+    api_address: localhost
     api_port: 10000
-    api_address: 127.0.0.1
     batch_size_warn_threshold_in_kb: 128
     batch_size_fail_threshold_in_kb: 1024
     partitioner: org.apache.cassandra.dht.Murmur3Partitioner
@@ -163,6 +166,31 @@ openfaas:
 ingress-nginx:
   controller:
     replicaCount: 1
+    image:
+      repository: k8s.gcr.io/ingress-nginx/controller # or edgedelta/ingress-nginx-controller
+      tag: v1.2.0
+      digest: ""
+    admissionWebhooks:
+      patch:
+        image:
+          repository: k8s.gcr.io/ingress-nginx/kube-webhook-certgen # or edgedelta/kube-webhook-certgen
+          tag: v1.1.1
+          digest: ""
 
 cert-manager:
   installCRDs: true
+  image:
+    repository: quay.io/jetstack/cert-manager-controller # or edgedelta/jetstack-cert-manager-controller
+    tag: "v1.8.0"
+  webhook:
+    image:
+      repository: quay.io/jetstack/cert-manager-webhook # or edgedelta/jetstack-cert-manager-webhook
+      tag: "v1.8.0"
+  cainjector:
+    image:
+      repository: quay.io/jetstack/cert-manager-cainjector # or edgedelta/jetstack-cert-manager-cainjector
+      tag: "v1.8.0"
+  startupapicheck:
+    image:
+      repository: quay.io/jetstack/cert-manager-ctl # or edgedelta/jetstack-cert-manager-ctl
+      tag: "v1.8.0"

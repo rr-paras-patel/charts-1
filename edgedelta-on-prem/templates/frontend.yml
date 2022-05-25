@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: gcr.io/edgedelta/app:on-prem-{{ .Chart.AppVersion }}
+        image: {{ .Values.repository }}/app:on-prem-{{ .Chart.AppVersion }}
         ports:
           - containerPort: {{ .Values.app.port | default 5555 }}
         env:

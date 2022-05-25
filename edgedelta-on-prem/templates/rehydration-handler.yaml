@@ -21,7 +21,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: rehydration-handler
-        image: gcr.io/edgedelta/function:{{ .Chart.AppVersion }}
+        image: {{ .Values.repository }}/function:{{ .Chart.AppVersion }}
         ports:
           - containerPort: {{ .Values.rehydration.handlerOptions.port | default 8080 }}
         command:
@@ -46,6 +46,12 @@ spec:
                 name: {{ .Values.rehydration.tokenSecretName | default "ed-rehydration-token" | quote }}
           - name: ED_REHYDRATION_MEMORY_THRESHOLD
             value: "{{ div (mul (.Values.rehydration.memoryLimit | default 16) 9) 10 }}G" # This value should be less than memory limit of the pod, ideally 90% of the limit
+          - name: ED_MAX_INFLIGHT
+            value: "1"
+          - name: ED_REHYDRATION_BLOCK_TIMEOUT
+            value: 5m
+          - name: STORE_PORT
+            value: "8085"
           - name: GOGC
             value: "20"
           - name: GODEBUG
