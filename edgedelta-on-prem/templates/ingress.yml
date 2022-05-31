@@ -18,6 +18,9 @@ spec:
   - hosts:
     - {{ .Values.app.hostName | quote }}
     secretName: tls-frontend-secret
+  - hosts:
+    - {{ .Values.influxdb.hostName | quote }}
+    secretName: tls-influxdb-secret
   rules:
     - host: {{ .Values.api.hostName | quote }}
       http:
@@ -37,6 +40,16 @@ spec:
                 name: admin-ui-service
                 port:
                   number: {{ .Values.app.port | default 5555 }}
+            path: /
+            pathType: Prefix
+    - host: {{ .Values.influxdb.hostName | quote }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: influxdb2-oss-service
+                port:
+                  number: {{ .Values.influxdb.port | default 8086 }}
             path: /
             pathType: Prefix
 {{- end }}

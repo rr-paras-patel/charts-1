@@ -54,14 +54,24 @@ spec:
             valueFrom:
               secretKeyRef:
                 key: {{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" | quote }}
-                name: {{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" | quote }}
+                name: {{ include "edgedelta.onprem.fullname" . }}-auth
           - name: BACKEND_ON_PREMISE_DYNAMO_SECRET_KEY
             valueFrom:
               secretKeyRef:
                 key: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
-                name: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
+                name: {{ include "edgedelta.onprem.fullname" . }}-auth
           - name: ED_OPENFAAS_GATEWAY
             value: "http://gateway-external.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8080"
+          - name: BACKEND_ON_PREMISE_INFLUX_HOST
+            {{- $port := .Values.influxdb.port | default 8086 }}
+            {{- $local := printf "http://influxdb2-oss-service.-%s.%s:%s" .Release.Namespace .Values.dnsSuffix $port }}
+            {{- $ingress := printf "https://%s" .Values.influxdb.hostName }}
+            value: "{{ $ingress |  default $local }}"
+          - name: INFLUX_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "edgedelta.onprem.fullname" . }}-auth
+                key: influx-admin-token
         command:
           - /edgedelta/admin
         args:

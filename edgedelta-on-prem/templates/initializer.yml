@@ -7,7 +7,7 @@ metadata:
   annotations:
     helm.sh/hook: post-install,post-upgrade
     helm.sh/hook-weight: "0"
-    helm.sh/hook-delete-policy: hook-succeeded,hook-failed
+    helm.sh/hook-delete-policy: hook-succeeded,hook-failed,before-hook-creation
   labels:
     k8s-app: initializer
     {{- include "edgedelta.onprem.labels" . | nindent 4 }}
@@ -26,6 +26,17 @@ spec:
       containers:
       - name: on-prem-initializer
         image: {{ .Values.repository }}/on-prem-init:2022-05-25-20-51-58
+        env:
+          - name: BACKEND_ON_PREMISE_DYNAMO_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                key: {{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" | quote }}
+                name: {{ include "edgedelta.onprem.fullname" . }}-auth
+          - name: BACKEND_ON_PREMISE_DYNAMO_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                key: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
+                name: {{ include "edgedelta.onprem.fullname" . }}-auth
         command:
           - /edgedelta/on-prem-init
           - --working-directory
@@ -44,10 +55,10 @@ spec:
           - {{ .Release.Namespace | quote }}
           - --k8s-readiness-config-map
           - {{ .Values.initializer.configMapName | default "ed-bootstrap-status" | quote }}
-          - --k8s-access-key-id-secret-name
-          - {{ .Values.initializer.accessKeyIdName | default "ed-scylladb-access-key-id" | quote }}
-          - --k8s-secret-key-k8s-secret-name
-          - {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
+          - --k8s-access-key-id
+          - $(BACKEND_ON_PREMISE_DYNAMO_ACCESS_KEY_ID)
+          - --k8s-secret-key-k8s
+          - $(BACKEND_ON_PREMISE_DYNAMO_SECRET_KEY)
         resources:
           {{- toYaml .Values.initializer.resources | nindent 10 }}
         imagePullPolicy: Always
