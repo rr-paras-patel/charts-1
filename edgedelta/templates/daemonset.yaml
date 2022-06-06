@@ -10,9 +10,13 @@ spec:
     matchLabels:
       {{- include "edgedelta.selectorLabels" . | nindent 6 }}
   updateStrategy:
+  {{- if .Values.updateStrategy }}
+    {{- toYaml .Values.updateStrategy | nindent 4 }}
+  {{- else }}
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
+  {{- end }}
   template:
     metadata:
       annotations:
@@ -23,11 +27,18 @@ spec:
       {{- include "edgedelta.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "edgedelta.fullname" . }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
-
         # agent container
         - name: {{ .Chart.Name }}-agent
-          image: {{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ if .Values.image.fullPath }}{{ .Values.image.fullPath }}{{ else }}{{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}{{ end }}
           {{- if .Values.storePort }}
           ports:
             - name: metrics
@@ -106,6 +117,10 @@ spec:
             - name:  NO_PROXY
               value: {{ .Values.noProxy }}
             {{- end }}
+            {{- if .Values.edCustomTags }}
+            - name:  ED_CUSTOM_TAGS
+              value: "{{ .Values.edCustomTags }}"
+            {{- end }}
             # pass node hostname to agent
             - name: ED_HOST_OVERRIDE
               valueFrom:
@@ -159,7 +174,6 @@ spec:
               name: capturedrequests
               subPathExpr: $(POD_NAME)
             {{- end }}
-
         # httprecorder container
         {{- if .Values.httpRecorderProps.enabled }}
         - name: {{ .Chart.Name }}-httprecorder
@@ -219,7 +233,6 @@ spec:
           hostPath:
             path: /var/log/
         {{- end }}
-
 {{- if .Values.httpRecorderProps.enabled }}
 ---
 # Service for httprecorder

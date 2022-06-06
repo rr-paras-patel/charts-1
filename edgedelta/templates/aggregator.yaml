@@ -9,7 +9,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate   # Rolling update gets stuck with ReadWriteOnce PVC
+    type: Recreate # Rolling update gets stuck with ReadWriteOnce PVC
   selector:
     matchLabels:
       {{- include "edgedelta.selectorLabels" . | nindent 6 }}
@@ -23,9 +23,17 @@ spec:
         {{- include "edgedelta.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "edgedelta.fullname" . }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - name: {{ .Chart.Name }}-aggregator
-        image: {{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+        image: {{ if .Values.image.fullPath }}{{ .Values.image.fullPath }}{{ else }}{{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}{{ end }}
         ports:
           - containerPort: {{ .Values.aggregatorProps.port }}
         env:
@@ -103,6 +111,10 @@ spec:
           {{- if .Values.noProxy }}
           - name:  NO_PROXY
             value: {{ .Values.noProxy }}
+          {{- end }}
+          {{- if .Values.edCustomTags }}
+          - name:  ED_CUSTOM_TAGS
+            value: "{{ .Values.edCustomTags }}"
           {{- end }}
           {{- range .Values.envs }}
           - name: {{ .name }}
