@@ -1,6 +1,7 @@
 fullNameOverride: ""
 dnsSuffix: "svc.cluster.local"
 repository: "gcr.io/edgedelta"
+storageClassName: ""
 
 openFaas: # valid for all deployment types
   enabled: true

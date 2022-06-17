@@ -1,4 +1,4 @@
-{{- if and (not .Values.openFaas.enabled) .Values.rehydration.handlerOptions.enabled }}
+{{- if .Values.rehydration.handlerOptions.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
