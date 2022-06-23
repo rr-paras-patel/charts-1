@@ -48,6 +48,32 @@ spec:
             value: {{ .Values.okta.clientId | quote }}
           - name: OKTA_NEW_USER_PASSWORD
             value: {{ .Values.okta.newUserPassword | quote }}
+          {{- if .Values.api.login.saml.enabled }}
+          - name: ENABLE_SAML
+            value: "1"
+          - name: SAML_URL #api handles the assertions
+          {{- if .Values.app.overrideApiUrl }}
+            value: {{ .Values.app.overrideApiUrl | quote }}
+          {{- else }}
+            value: "https://{{ .Values.api.hostName }}"
+          {{- end }}
+          - name: "SAML_REDIRECT_URL"
+          {{- if .Values.api.login.saml.redirectUrl }}
+            value: {{ .Values.api.login.saml.redirectUrl | quote }}
+          {{- else }}
+            value: "https://{{ .Values.app.hostName }}"
+          {{- end }}
+          - name: SAML_KEY
+            valueFrom:
+              secretKeyRef:
+                key: {{ .Values.initializer.samlKeyName | default "saml-key" | quote }}
+                name: {{ .Values.initializer.samlKeyName | default "saml-key" | quote }}
+          - name: SAML_CERT
+            valueFrom:
+              secretKeyRef:
+                key: {{ .Values.initializer.samlCertName | default "saml-cert" | quote }}
+                name: {{ .Values.initializer.samlCertName | default "saml-cert" | quote }}
+          {{- end }}
           - name: BACKEND_ON_PREMISE_DYNAMO_ENDPOINT
             value: http://scylladb-service.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8000
           - name: BACKEND_ON_PREMISE_DYNAMO_ACCESS_KEY_ID
@@ -62,6 +88,16 @@ spec:
                 name: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
           - name: ED_OPENFAAS_GATEWAY
             value: "http://gateway-external.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8080"
+          {{- if or .Values.app.hostName .Values.api.corsOverrides }}
+          - name: ED_CORS_OVERRIDE
+          {{- if and .Values.app.hostName .Values.api.corsOverrides }}
+            value: {{ append .Values.api.corsOverrides .Values.app.hostName | join "," | quote }}
+          {{- else if .Values.app.hostName }}
+            value: {{ .Values.app.hostName | quote }}
+          {{- else if .Values.api.corsOverrides }}
+            value: {{ .Values.api.corsOverrides | join "," | quote }}
+          {{- end }}
+          {{- end }}
         command:
           - /edgedelta/admin
         args:

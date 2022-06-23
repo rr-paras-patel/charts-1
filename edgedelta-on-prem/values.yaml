@@ -31,6 +31,7 @@ api:
   masterSecret: "" # It will use a randomly-generated UUIDv4 if not set
   port: 4444
   hostName: ""
+  corsOverrides: []
 
   replicaCount: 4
   resources:
@@ -40,6 +41,12 @@ api:
     requests:
       cpu: 512m
       memory: 256Mi
+  
+  login:
+    saml:
+      enabled: false
+      redirectUrl: ""
+    
 
 app:
   enabled: true
@@ -90,6 +97,11 @@ initializer:
   accessKeyIdName: "ed-scylladb-access-key-id"
   secretKeyName: "ed-scylladb-secret-key"
   configMapName: "ed-bootstrap-status"
+
+  samlSubjectName: "ed-on-prem-org.com" #certificate CN, SAN
+  samlOrgName: "ed-on-prem-org" #certificate Organization
+  samlKeyName: "saml-key"
+  samlCertName: "saml-cert"
 
   resources:
     limits:
@@ -145,24 +157,35 @@ scylla:
 openfaas:
   functionNamespace: "openfaas-fn" # it should be renamed as helm namespace
   serviceType: "NodePort"
-  basic_auth: false
+  basic_auth: true
   generateBasicAuth: false # set to true when license is not empty
   openfaasPro: false # set to true when license is not empty
   ceScaling: false
-  autoscaler:
+  proScaler:
+    image: alexellis2/openfaas-pro-scaler:0.1.2
     enabled: false # set to true when license is not empty
-  clusterRole: false # set to true when license is not empty
-  faasnetes:
-    readTimeout: "1h5m"
-    writeTimeout: "1h5m"
   gateway:
+    image: ghcr.io/openfaas/gateway:0.21.3 # or edgedelta/openfaas-gateway:0.21.3
     readTimeout: "1h5m"
     writeTimeout: "1h5m"
     upstreamTimeout: "1h"  # Must be smaller than read/write_timeout
+  basicAuthPlugin:
+    image: ghcr.io/openfaas/basic-auth:0.21.1 # or edgedelta/openfaas-basic-auth:0.21.1
+  faasnetes:
+    image: ghcr.io/openfaas/faas-netes:0.14.1 # or edgedelta/openfaas-faas-netes:0.14.1
+    readTimeout: "1h5m"
+    writeTimeout: "1h5m"
+  operator:
+    image: ghcr.io/openfaas/faas-netes:0.14.1 # or edgedelta/openfaas-faas-netes:0.14.1
   queueWorkerPro:
+    image: ghcr.io/openfaas/queue-worker-pro:0.1.0-rc5 # or edgedelta/openfaas-queue-worker-pro:0.1.0-rc5
     enabled: false # set to true when license is not empty
   queueWorker:
+    image: ghcr.io/openfaas/queue-worker:0.12.2 # or edgedelta/openfaas-queue-worker:0.12.2
     ackWait: "1h"
+  autoscaler:
+    enabled: false # set to true when license is not empty
+  clusterRole: false # set to true when license is not empty
 
 ingress-nginx:
   controller:
