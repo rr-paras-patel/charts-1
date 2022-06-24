@@ -14,6 +14,7 @@ apiKey: ""
 # See: https://docs.edgedelta.com/installation/environment-variables
 
 storePort: ""
+dataPort: ""
 httpProxy: ""
 httpsProxy: ""
 noProxy: ""
@@ -46,6 +47,11 @@ aggregatorProps:
   # aggregator agent needs a small amount of disk space to persist some internal source related information to be able to work smoothly after restarts/upgrades.
   # If your k8s cluster has specific storage classes you can set storageClassName accordingly.
   storageClassName: ""
+
+archiverProps:
+  enabled: false
+  port: 9292
+  # Final archiver endpoint looks like this: http://ed-archiver-svc.my-namespace.dns-suffix:9292
 
 # HttpRecorder is a frontend layer which can consume logs with both http and tcp protocols
 # It is deployed as a sidecar for each ED agent. It dumps the incoming logs to filesystem (persisted via PVC) and agents grab from there.

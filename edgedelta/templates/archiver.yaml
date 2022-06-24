@@ -1,12 +1,12 @@
-{{- if .Values.aggregatorProps.enabled }}
+{{- if .Values.archiverProps.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "edgedelta.fullname" . }}-aggregator
+  name: {{ include "edgedelta.fullname" . }}-archiver
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "edgedelta.labels" . | nindent 4 }}
-    edgedelta/agent-type: aggregator
+    edgedelta/agent-type: archiver
 spec:
   replicas: 1
   strategy:
@@ -22,7 +22,7 @@ spec:
       {{- end }}
       labels:
         {{- include "edgedelta.labels" . | nindent 8 }}
-        edgedelta/agent-type: aggregator
+        edgedelta/agent-type: archiver
     spec:
       serviceAccountName: {{ include "edgedelta.fullname" . }}
       {{- if .Values.tolerations }}
@@ -34,19 +34,17 @@ spec:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
       containers:
-      - name: {{ .Chart.Name }}-aggregator
+      - name: {{ .Chart.Name }}-archiver
         image: {{ if .Values.image.fullPath }}{{ .Values.image.fullPath }}{{ else }}{{ .Values.image.name }}:{{ .Values.image.tag | default .Chart.AppVersion }}{{ end }}
         ports:
-          - containerPort: {{ .Values.aggregatorProps.port }}
+          - containerPort: {{ .Values.archiverProps.port }}
         env:
           - name: ED_AGENT_MODE
-            value: aggregator
-          - name: ED_AGGREGATOR_LISTEN_PORT
-            value: "{{ .Values.aggregatorProps.port }}"
-          - name:  ED_AGGREGATOR_SRC_MAP_PATH
-            value: "/edgedelta/data/src_mapping.json"
+            value: archiver
+          - name: ED_ARCHIVER_PORT
+            value: "{{ .Values.archiverProps.port }}"
           - name: ED_HOST_OVERRIDE
-            value: {{ .Chart.Name }}-aggregator
+            value: {{ .Chart.Name }}-archiver
           {{- if .Values.apiKey }}
           - name:  ED_API_KEY
             value: "{{ .Values.apiKey }}"
@@ -129,53 +127,33 @@ spec:
                 name: {{ .secretKeyRef.name }}
                 key: {{ .secretKeyRef.key }}
           {{- end }}
+        {{- if .Values.edConfigContent }}
         volumeMounts:
-          - name: "aggregator-data"
-            mountPath: "/edgedelta/data"
-          {{- if .Values.edConfigContent }}
           - name: config-volume
             mountPath: /edgedelta/config.yml
             subPath: config.yml
-          {{- end }}
+        {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         imagePullPolicy: Always
       terminationGracePeriodSeconds: 10
+      {{- if .Values.edConfigContent }}
       volumes:
-        - name: aggregator-data
-          persistentVolumeClaim:
-            claimName: aggregator-data
-        {{- if .Values.edConfigContent }}
         - name: config-volume
           configMap:
             name: {{ .Release.Name }}
-        {{- end }}
+      {{- end }}
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: ed-aggregator-svc
+  name: ed-archiver-svc
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
     {{- include "edgedelta.labels" . | nindent 4 }}
-    edgedelta/agent-type: aggregator
+    edgedelta/agent-type: archiver
   ports:
-    - port: {{ .Values.aggregatorProps.port }}
-      name: aggregator-port
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: aggregator-data
-  namespace: {{ .Release.Namespace }}
-spec:
-  {{- if .Values.aggregatorProps.storageClassName }}
-  storageClassName: {{ .Values.aggregatorProps.storageClassName }}
-  {{- end }}
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
+    - port: {{ .Values.archiverProps.port }}
+      name: archiver-port
 {{- end }}

@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "edgedelta.labels" . | nindent 4 }}
+    edgedelta/agent-type: processor
 spec:
   selector:
     matchLabels:
@@ -25,6 +26,7 @@ spec:
       {{- end }}
       labels:
       {{- include "edgedelta.labels" . | nindent 8 }}
+        edgedelta/agent-type: processor
     spec:
       serviceAccountName: {{ include "edgedelta.fullname" . }}
       {{- if .Values.tolerations }}
@@ -44,6 +46,12 @@ spec:
             - name: metrics
               hostPort: {{ .Values.storePort }}
               containerPort: {{ .Values.storePort }}
+          {{- end }}
+          {{- if .Values.dataPort }}
+          ports:
+            - name: data
+              hostPort: {{ .Values.dataPort }}
+              containerPort: {{ .Values.dataPort }}
           {{- end }}
           env:
             {{- if .Values.apiKey }}
@@ -244,7 +252,28 @@ metadata:
 spec:
   selector:
     {{- include "edgedelta.labels" . | nindent 4 }}
+    edgedelta/agent-type: processor
   ports:
-  - port: {{.Values.httpRecorderProps.port}}
+  - port: {{ .Values.httpRecorderProps.port }}
     name: httprecorder-port
+{{- end }}
+{{- if .Values.dataPort }}
+---
+# Service for data supply
+apiVersion: v1
+kind: Service
+metadata:
+  name: ed-data-supply-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 86400 # 24h
+  selector:
+    {{- include "edgedelta.labels" . | nindent 4 }}
+    edgedelta/agent-type: processor
+  ports:
+  - port: {{ .Values.dataPort }}
+    name: data-port
 {{- end }}
