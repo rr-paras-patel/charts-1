@@ -45,6 +45,8 @@ spec:
             value: "{{ .Values.archiverProps.port }}"
           - name: ED_HOST_OVERRIDE
             value: {{ .Chart.Name }}-archiver
+          - name: ED_ARCHIVER_DUMP_FOLDER
+            value: "/edgedelta/data"
           {{- if .Values.apiKey }}
           - name:  ED_API_KEY
             value: "{{ .Values.apiKey }}"
@@ -127,8 +129,10 @@ spec:
                 name: {{ .secretKeyRef.name }}
                 key: {{ .secretKeyRef.key }}
           {{- end }}
-        {{- if .Values.edConfigContent }}
         volumeMounts:
+          - name: archiver-data
+            mountPath: /edgedelta/data
+        {{- if .Values.edConfigContent }}
           - name: config-volume
             mountPath: /edgedelta/config.yml
             subPath: config.yml
@@ -137,8 +141,11 @@ spec:
           {{- toYaml .Values.resources | nindent 10 }}
         imagePullPolicy: Always
       terminationGracePeriodSeconds: 10
-      {{- if .Values.edConfigContent }}
       volumes:
+        - name: archiver-data
+          persistentVolumeClaim:
+            claimName: archiver-data
+      {{- if .Values.edConfigContent }}
         - name: config-volume
           configMap:
             name: {{ .Release.Name }}
@@ -156,4 +163,19 @@ spec:
   ports:
     - port: {{ .Values.archiverProps.port }}
       name: archiver-port
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: archiver-data
+  namespace: {{ .Release.Namespace }}
+spec:
+  {{- if .Values.archiverProps.storageClassName }}
+  storageClassName: {{ .Values.archiverProps.storageClassName }}
+  {{- end }}
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
 {{- end }}
