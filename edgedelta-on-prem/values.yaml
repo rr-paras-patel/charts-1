@@ -18,6 +18,9 @@ clusterIssuer:
   enabled: true
   letsEncryptEmail: ""
 
+  namespaceLabeler:
+    image: bitnami/kubectl:1.22.9
+
 # This section will be used by both API and UI component
 # These needs to be set in advance by using Okta admin panel and generating a new application
 okta:
@@ -41,12 +44,11 @@ api:
     requests:
       cpu: 512m
       memory: 256Mi
-  
+
   login:
     saml:
       enabled: false
       redirectUrl: ""
-    
 
 app:
   enabled: true
@@ -113,6 +115,7 @@ initializer:
 
 # rest is the configuration for third party dependencies and Helm charts
 scylla:
+  image: scylladb/scylla:latest
   enabled: true
 
   resources:

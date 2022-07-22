@@ -21,7 +21,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: scylladb
-        image: scylladb/scylla:latest
+        image: {{ .Values.scylla.image }}
         ports:
           - containerPort: 8000
           - containerPort: 9042

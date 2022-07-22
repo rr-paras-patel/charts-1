@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: labeler
-        image: bitnami/kubectl:1.22.9
+        image: {{ .Values.clusterIssuer.namespaceLabeler.image }}
         command:
         - kubectl
         - label
