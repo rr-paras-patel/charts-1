@@ -160,13 +160,19 @@ scylla:
 openfaas:
   functionNamespace: "openfaas-fn" # it should be renamed as helm namespace
   serviceType: "NodePort"
-  basic_auth: true
+  basic_auth: false # set to true when license is not empty
   generateBasicAuth: false # set to true when license is not empty
   openfaasPro: false # set to true when license is not empty
   ceScaling: false
   proScaler:
-    image: alexellis2/openfaas-pro-scaler:0.1.2
+    image: ghcr.io/openfaasltd/autoscaler:0.2.0 # or edgedelta/openfaas-autoscaler:0.2.0
     enabled: false # set to true when license is not empty
+  faasIdler:
+    image: ghcr.io/openfaas/faas-idler-pro:0.4.4 # or edgedelta/openfaas-faas-idler-pro:0.4.4
+    enabled: false # set to true when license is not empty
+  oidcAuthPlugin:
+    image: ghcr.io/openfaas/openfaas-oidc-plugin:0.5.1 # or edgedelta/openfaas-oidc-plugin:0.5.1
+    enabled: false
   gateway:
     image: ghcr.io/openfaas/gateway:0.21.3 # or edgedelta/openfaas-gateway:0.21.3
     readTimeout: "1h5m"
@@ -186,6 +192,17 @@ openfaas:
   queueWorker:
     image: ghcr.io/openfaas/queue-worker:0.12.2 # or edgedelta/openfaas-queue-worker:0.12.2
     ackWait: "1h"
+  prometheus:
+    image: prom/prometheus:v2.11.0
+  alertmanager:
+    image: prom/alertmanager:v0.18.0
+  nats:
+    image: nats-streaming:0.22.0
+    metrics:
+      image: natsio/prometheus-nats-exporter:0.8.0
+      enabled: false
+  ingressOperator:
+    image: ghcr.io/openfaas/ingress-operator:0.6.7 # or edgedelta/openfaas-ingress-operator:0.6.7
   autoscaler:
     enabled: false # set to true when license is not empty
   clusterRole: false # set to true when license is not empty
@@ -200,7 +217,7 @@ ingress-nginx:
     admissionWebhooks:
       patch:
         image:
-          repository: k8s.gcr.io/ingress-nginx/kube-webhook-certgen # or edgedelta/kube-webhook-certgen
+          repository: k8s.gcr.io/ingress-nginx/kube-webhook-certgen # or edgedelta/ingress-nginx-kube-webhook-certgen
           tag: v1.1.1
           digest: ""
 
