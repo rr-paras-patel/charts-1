@@ -1,0 +1,139 @@
+{{- if and (.Values.networkPolicy.enabled) (eq .Values.networkPolicy.type "cilium") -}}
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "edgedelta.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edgedelta.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+      {{- toYaml .Values.labels | nindent 4 }}
+    {{- end }}
+specs:
+  - description: "Egress to metadata server"
+    endpointSelector:
+      matchLabels:
+        {{- include "edgedelta.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+          {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
+    egress:
+      - toCIDR:
+          - 169.254.169.254/32
+        toPorts:
+          - ports:
+              - port: "80"
+                protocol: TCP
+  - description: "Egress to DNS"
+    endpointSelector:
+      matchLabels:
+        {{- include "edgedelta.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+          {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
+    egress:
+      - {{ toYaml .Values.networkPolicy.cilium.dnsSelector | nindent 8 }}
+        toPorts:
+          - ports:
+              - port: "53"
+                protocol: ANY
+            rules:
+              dns:
+                - matchPattern: "*"
+  - description: "Egress to Kube API server"
+    endpointSelector:
+      matchLabels:
+        {{- include "edgedelta.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+          {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
+    egress:
+      # toServices works only for endpoints outside of the cluster
+      # This section handles the case where the control plane is outside
+      # of the cluster.
+      - toServices:
+          - k8sService:
+              namespace: default
+              serviceName: kubernetes
+      # When the control plane is on the same cluster, we must allow connections
+      # to the node entity.
+      - toEntities:
+          - host
+          - remote-node
+        toPorts:
+          - ports:
+              - port: "443"
+                protocol: TCP
+  - description: "Egress to EdgeDelta"
+    endpointSelector:
+      matchLabels:
+        {{- include "edgedelta.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+          {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
+    egress:
+      - toFQDNs:
+          - matchName: "api.edgedelta.com"
+          - matchName: "us-west-2-1.aws.cloud2.influxdata.com"
+          - matchName: "53f55016dbcb4e5f8b7fdf4a14a4cacc.us-west-2.aws.found.io"
+          - matchPattern: "*.s3.us-west-2.amazonaws.com"
+        toPorts:
+          - ports:
+              - port: "443"
+                protocol: TCP
+              - port: "9243"
+                protocol: TCP
+  - description: "Egress to Kubelet"
+    endpointSelector:
+      matchLabels:
+        {{- include "edgedelta.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+          {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
+    egress:
+      - toEntities:
+          - host
+        toPorts:
+          - ports:
+              - port: "10250"
+                protocol: TCP
+  - description: "Edge Delta Agents Internal Ingress Access"
+    endpointSelector:
+      matchLabels:
+        {{- include "edgedelta.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+          {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
+    ingress:
+    - fromEndpoints:
+      - matchLabels:
+          {{- include "edgedelta.labels" . | nindent 12 }}
+          {{- if .Values.labels }}
+            {{- toYaml .Values.labels | nindent 12 }}
+          {{- end }}
+  - description: "Edge Delta Agents Internal Egress Access"
+    endpointSelector:
+      matchLabels:
+        {{- include "edgedelta.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+          {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
+    egress:
+    - toEndpoints:
+      - matchLabels:
+          {{- include "edgedelta.labels" . | nindent 12 }}
+          {{- if .Values.labels }}
+            {{- toYaml .Values.labels | nindent 12 }}
+          {{- end }}
+  {{- if .Values.networkPolicy.cilium.customEndpoints }}
+  - description: "Custom Policy Egress Access"
+    endpointSelector:
+      matchLabels:
+        {{- include "edgedelta.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+          {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
+    egress:
+      - {{ toYaml .Values.networkPolicy.cilium.customEndpoints | nindent 8 }}
+  {{- end }}
+{{- end }}

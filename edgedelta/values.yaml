@@ -15,6 +15,7 @@ apiKey: ""
 
 storePort: ""
 dataPort: ""
+profilerPort: ""
 httpProxy: ""
 httpsProxy: ""
 noProxy: ""
@@ -26,6 +27,8 @@ edWorkflows: ""
 edWorkflowPrefixes: ""
 edDisableLeaderElection: ""
 edTraceFiles: ""
+edSkipTlsVerify: ""
+edConfigContent: ""
 
 # custom tags are comma separated key:val pairs. these are going to be attached to all outgoing data from agent to configured destination(s).
 edCustomTags: ""
@@ -35,6 +38,10 @@ persistingCursorProps:
   enabled: false
   hostMountPath: "/var/lib/edgedelta"
   containerMountPath: "/var/lib/edgedelta"
+
+# Docker container properties
+dockerContainerProps:
+  hostPath: "/var/lib/docker/containers"
 
 # Aggregator agent mode properties
 # Agents are deployed as daemonset. an extra aggregator agent is deployed to collect/aggregate metrics
@@ -67,6 +74,11 @@ httpRecorderProps:
     enabled: false
     host: ""
     class: nginx
+
+# Custom labels:
+
+# labels:
+#   sample-label-key: sample-label-value
 
 # Custom environment variables:
 
@@ -116,3 +128,38 @@ image:
 
 nameOverride: ""
 fullnameOverride: ""
+
+# Manage NetworkPolicy
+networkPolicy:
+  # networkPolicy.create -- If true, create NetworkPolicy for DaemonSet
+  enabled: false
+  # networkPolicy.type -- Type of the network policy to use.
+  # Can be:
+  # * cilium     for cilium.io/v2/CiliumNetworkPolicy
+  type: cilium
+  cilium:
+    # networkPolicy.cilium.dnsSelector -- Cilium selector of the DNS server entity
+    # @default -- kube-dns in namespace kube-system
+    dnsSelector:
+      toEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": kube-system
+            "k8s:k8s-app": kube-dns
+
+    # networkPolicy.cilium.customEndpoints -- Custom endpoint addresses for egress traffic
+    # 
+    # customEndpoints:
+    #   toFQDNs:
+    #     - matchName: "api.edgedelta.com"
+    #     - matchPattern: "*.s3.us-east-1.amazonaws.com"
+    #   toCIDR:
+    #     - 192.168.1.0/24
+    #   toServices:
+    #     - k8sService:
+    #         namespace: default
+    #         serviceName: customservice
+    #   toPorts:
+    #     - ports:
+    #         - port: "443"
+    #           protocol: TCP
+    

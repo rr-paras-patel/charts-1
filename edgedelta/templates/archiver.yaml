@@ -6,6 +6,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "edgedelta.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+      {{- toYaml .Values.labels | nindent 4 }}
+    {{- end }}
     edgedelta/agent-type: archiver
 spec:
   replicas: 1
@@ -14,6 +17,9 @@ spec:
   selector:
     matchLabels:
       {{- include "edgedelta.selectorLabels" . | nindent 6 }}
+      {{- if .Values.labels }}
+        {{- toYaml .Values.labels | nindent 6 }}
+      {{- end }}
   template:
     metadata:
       annotations:
@@ -22,6 +28,9 @@ spec:
       {{- end }}
       labels:
         {{- include "edgedelta.labels" . | nindent 8 }}
+        {{- if .Values.labels }}
+          {{- toYaml .Values.labels | nindent 8 }}
+        {{- end }}
         edgedelta/agent-type: archiver
     spec:
       serviceAccountName: {{ include "edgedelta.fullname" . }}
@@ -132,6 +141,9 @@ spec:
         volumeMounts:
           - name: archiver-data
             mountPath: /edgedelta/data
+          - name: hostpath
+            mountPath: {{ .Values.dockerContainerProps.hostPath }}
+            readOnly: true
         {{- if .Values.edConfigContent }}
           - name: config-volume
             mountPath: /edgedelta/config.yml
@@ -145,6 +157,9 @@ spec:
         - name: archiver-data
           persistentVolumeClaim:
             claimName: archiver-data
+        - name: hostpath
+          hostPath:
+            path: {{ .Values.dockerContainerProps.hostPath }}
       {{- if .Values.edConfigContent }}
         - name: config-volume
           configMap:
@@ -159,6 +174,9 @@ metadata:
 spec:
   selector:
     {{- include "edgedelta.labels" . | nindent 4 }}
+    {{- if .Values.labels }}
+      {{- toYaml .Values.labels | nindent 4 }}
+    {{- end }}
     edgedelta/agent-type: archiver
   ports:
     - port: {{ .Values.archiverProps.port }}
