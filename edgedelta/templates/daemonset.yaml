@@ -239,6 +239,7 @@ spec:
         {{- end }}
 
       terminationGracePeriodSeconds: 10
+      priorityClassName: {{ .Values.priorityClassName }} 
       volumes:
         - name: varlog
           hostPath:
