@@ -24,6 +24,10 @@ spec:
         {{- include "edgedelta.onprem.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "edgedelta.onprem.fullname" . | quote }}
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       containers:
       - name: api
         image: {{ .Values.repository }}/admin:on-prem-{{ .Chart.AppVersion }}
@@ -86,8 +90,13 @@ spec:
               secretKeyRef:
                 key: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
                 name: {{ .Values.initializer.secretKeyName | default "ed-scylladb-secret-key" | quote }}
+          {{- if .Values.openFaas.enabled }}
           - name: ED_OPENFAAS_GATEWAY
             value: "http://gateway-external.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:8080"
+          {{- else }}
+          - name: ED_DISABLE_OPENFAAS
+            value: "1"
+          {{- end }}
           {{- if or .Values.app.hostName .Values.api.corsOverrides }}
           - name: ED_CORS_OVERRIDE
           {{- if and .Values.app.hostName .Values.api.corsOverrides }}
@@ -97,6 +106,20 @@ spec:
           {{- else if .Values.api.corsOverrides }}
             value: {{ .Values.api.corsOverrides | join "," | quote }}
           {{- end }}
+          {{- end }}
+          {{- if .Values.influxdb.enabled }}
+          - name: BACKEND_ON_PREMISE_INFLUX_HOST
+          {{- $port := .Values.influxdb.port | default 8086 }}
+          {{- if .Values.influxdb.hostName }}
+            value: "https://{{ .Values.influxdb.hostName }}"
+          {{- else }}
+            value: "http://influxdb.{{ .Release.Namespace }}.{{ .Values.dnsSuffix }}:{{ $port }}"
+          {{- end }}
+          - name: INFLUX_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "edgedelta.onprem.fullname" . }}-auth
+                key: "DOCKER_INFLUXDB_INIT_ADMIN_TOKEN"
           {{- end }}
         command:
           - /edgedelta/admin

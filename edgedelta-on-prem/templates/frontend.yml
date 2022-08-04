@@ -18,6 +18,11 @@ spec:
         k8s-app: admin-ui
         {{- include "edgedelta.onprem.labels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "edgedelta.onprem.fullname" . | quote }}
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       containers:
       - name: app
         image: {{ .Values.repository }}/app:on-prem-{{ .Chart.AppVersion }}

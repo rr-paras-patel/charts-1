@@ -3,7 +3,11 @@ dnsSuffix: "svc.cluster.local"
 repository: "gcr.io/edgedelta"
 storageClassName: ""
 
-openFaas: # valid for all deployment types
+# This should be enabled and edited for secure clusters such as OpenShift
+# podSecurityContext:
+#   runAsUser: 1000
+
+openFaas: # Valid for all deployment types
   enabled: true
   minRehydrationCount: 1
   isFullDeployment: true
@@ -54,7 +58,7 @@ app:
   enabled: true
   port: 5555
   hostName: ""
-  overrideApiUrl: "" # default is https://<api_host_name>, however if this field is not empty, we will override api url with given one
+  overrideApiUrl: "" # Default is https://<api_host_name>, however if this field is not empty, we will override api url with given one
 
   replicaCount: 3
   resources:
@@ -71,10 +75,10 @@ rehydration:
   pushBatchSize: "10000"
   token: ""
   tokenSecretName: "ed-rehydration-token"
-  apiEndpoint: "" # it should be empty for "full" deployment mode. Default is https://api.edgedelta.com
+  apiEndpoint: "" # It should be empty for "full" deployment mode. Default is https://api.edgedelta.com
   memoryLimit: 16 # In terms of GB
 
-  pollerOptions: # only valid if deployment mode is "only_rehydration"
+  pollerOptions: # Only valid if deployment mode is "only_rehydration"
     enabled: false
     pollInterval: 10s
 
@@ -86,9 +90,10 @@ rehydration:
         cpu: 100m
         memory: 100Mi
 
-  handlerOptions: # only valid if deployment mode is "only_rehydration"
+  handlerOptions: # Only valid if deployment mode is "only_rehydration"
     enabled: false
     port: 8080
+    replicaCount: 1
 
     cpuRequest: 1000m
     cpuLimit: 2000m
@@ -100,8 +105,8 @@ initializer:
   secretKeyName: "ed-scylladb-secret-key"
   configMapName: "ed-bootstrap-status"
 
-  samlSubjectName: "ed-on-prem-org.com" #certificate CN, SAN
-  samlOrgName: "ed-on-prem-org" #certificate Organization
+  samlSubjectName: "ed-on-prem-org.com" # Certificate CN, SAN
+  samlOrgName: "ed-on-prem-org" # Certificate Organization
   samlKeyName: "saml-key"
   samlCertName: "saml-cert"
 
@@ -113,7 +118,7 @@ initializer:
       cpu: 100m
       memory: 100Mi
 
-# rest is the configuration for third party dependencies and Helm charts
+# Rest is the configuration for third party dependencies and Helm charts
 scylla:
   image: scylladb/scylla:latest
   enabled: true
@@ -157,19 +162,50 @@ scylla:
     commitlog_total_space_in_mb: -1
     murmur3_partitioner_ignore_msb_bits: 12
 
+influxdb:
+  enabled: false
+
+  image:
+    repository: influxdb
+    tag: 2.2.0-alpine
+
+  port: 8086
+  # Required if agents will use influx outside of cluster.
+  hostName: ""
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 6Gi
+    requests:
+      cpu: 1000m
+      memory: 3Gi
+
+  persistence:
+    storageResources:
+      requests:
+        storage: 10Gi
+    mountPath: /var/lib/influxdb2
+
+  adminUser:
+    organization: "influxdata"
+    bucket: "default"
+    username: "admin"
+
 openfaas:
-  functionNamespace: "openfaas-fn" # it should be renamed as helm namespace
+  # securityContext: true # This should be enabled and edited for secure clusters such as OpenShift
+  functionNamespace: "openfaas-fn" # It should be renamed as helm namespace
   serviceType: "NodePort"
-  basic_auth: false # set to true when license is not empty
-  generateBasicAuth: false # set to true when license is not empty
-  openfaasPro: false # set to true when license is not empty
+  basic_auth: true
+  generateBasicAuth: true
+  openfaasPro: false # Set to true when license is not empty
   ceScaling: false
   proScaler:
     image: ghcr.io/openfaasltd/autoscaler:0.2.0 # or edgedelta/openfaas-autoscaler:0.2.0
-    enabled: false # set to true when license is not empty
+    enabled: false # Set to true when license is not empty
   faasIdler:
     image: ghcr.io/openfaas/faas-idler-pro:0.4.4 # or edgedelta/openfaas-faas-idler-pro:0.4.4
-    enabled: false # set to true when license is not empty
+    enabled: false # Set to true when license is not empty
   oidcAuthPlugin:
     image: ghcr.io/openfaas/openfaas-oidc-plugin:0.5.1 # or edgedelta/openfaas-oidc-plugin:0.5.1
     enabled: false
@@ -177,7 +213,7 @@ openfaas:
     image: ghcr.io/openfaas/gateway:0.21.3 # or edgedelta/openfaas-gateway:0.21.3
     readTimeout: "1h5m"
     writeTimeout: "1h5m"
-    upstreamTimeout: "1h"  # Must be smaller than read/write_timeout
+    upstreamTimeout: "1h" # Must be smaller than read/write_timeout
   basicAuthPlugin:
     image: ghcr.io/openfaas/basic-auth:0.21.1 # or edgedelta/openfaas-basic-auth:0.21.1
   faasnetes:
@@ -188,7 +224,7 @@ openfaas:
     image: ghcr.io/openfaas/faas-netes:0.14.1 # or edgedelta/openfaas-faas-netes:0.14.1
   queueWorkerPro:
     image: ghcr.io/openfaas/queue-worker-pro:0.1.0-rc5 # or edgedelta/openfaas-queue-worker-pro:0.1.0-rc5
-    enabled: false # set to true when license is not empty
+    enabled: false # Set to true when license is not empty
   queueWorker:
     image: ghcr.io/openfaas/queue-worker:0.12.2 # or edgedelta/openfaas-queue-worker:0.12.2
     ackWait: "1h"
@@ -204,11 +240,14 @@ openfaas:
   ingressOperator:
     image: ghcr.io/openfaas/ingress-operator:0.6.7 # or edgedelta/openfaas-ingress-operator:0.6.7
   autoscaler:
-    enabled: false # set to true when license is not empty
-  clusterRole: false # set to true when license is not empty
+    enabled: false # Set to true when license is not empty
+  clusterRole: false # Set to true when license is not empty
 
 ingress-nginx:
   controller:
+    # This should be enabled and edited for secure clusters such as OpenShift
+    # podSecurityContext:
+    #   runAsUser: 1000
     replicaCount: 1
     image:
       repository: k8s.gcr.io/ingress-nginx/controller # or edgedelta/ingress-nginx-controller
@@ -216,25 +255,39 @@ ingress-nginx:
       digest: ""
     admissionWebhooks:
       patch:
+        # This should be enabled and edited for secure clusters such as OpenShift
+        # runAsUser: 1000
         image:
           repository: k8s.gcr.io/ingress-nginx/kube-webhook-certgen # or edgedelta/ingress-nginx-kube-webhook-certgen
           tag: v1.1.1
           digest: ""
 
 cert-manager:
+  # This should be enabled and edited for secure clusters such as OpenShift
+  # securityContext:
+  #   runAsUser: 1000
   installCRDs: true
   image:
     repository: quay.io/jetstack/cert-manager-controller # or edgedelta/jetstack-cert-manager-controller
     tag: "v1.8.0"
   webhook:
+    # This should be enabled and edited for secure clusters such as OpenShift
+    # securityContext:
+    #   runAsUser: 1000
     image:
       repository: quay.io/jetstack/cert-manager-webhook # or edgedelta/jetstack-cert-manager-webhook
       tag: "v1.8.0"
   cainjector:
+    # This should be enabled and edited for secure clusters such as OpenShift
+    # securityContext:
+    #   runAsUser: 1000
     image:
       repository: quay.io/jetstack/cert-manager-cainjector # or edgedelta/jetstack-cert-manager-cainjector
       tag: "v1.8.0"
   startupapicheck:
+    # This should be enabled and edited for secure clusters such as OpenShift
+    # securityContext:
+    #   runAsUser: 1000
     image:
       repository: quay.io/jetstack/cert-manager-ctl # or edgedelta/jetstack-cert-manager-ctl
       tag: "v1.8.0"

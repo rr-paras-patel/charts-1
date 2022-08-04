@@ -8,7 +8,7 @@ metadata:
     k8s-app: rehydration-handler
     {{- include "edgedelta.onprem.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.rehydration.handlerOptions.replicaCount }}
   selector:
     matchLabels:
       k8s-app: rehydration-handler
@@ -18,7 +18,12 @@ spec:
         k8s-app: rehydration-handler
         {{- include "edgedelta.onprem.labels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "edgedelta.onprem.fullname" . | quote }}
       terminationGracePeriodSeconds: 10
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       containers:
       - name: rehydration-handler
         image: {{ .Values.repository }}/function:{{ .Chart.AppVersion }}

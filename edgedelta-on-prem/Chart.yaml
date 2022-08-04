@@ -2,8 +2,8 @@ apiVersion: v2
 name: edgedelta-on-prem
 description: Edge Delta On-Prem Deployment Chart for Kubernetes
 type: application
-version:  0.1.4
-appVersion: v0.1.4
+version:  0.1.5
+appVersion: v0.1.5
 
 dependencies:
   - name: openfaas

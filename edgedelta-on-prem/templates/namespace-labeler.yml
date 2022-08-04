@@ -14,6 +14,10 @@ metadata:
 spec:
   template:
     spec:
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
       containers:
       - name: labeler
         image: {{ .Values.clusterIssuer.namespaceLabeler.image }}
