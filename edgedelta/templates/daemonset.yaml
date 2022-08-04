@@ -13,9 +13,6 @@ spec:
   selector:
     matchLabels:
       {{- include "edgedelta.selectorLabels" . | nindent 6 }}
-      {{- if .Values.labels }}
-        {{- toYaml .Values.labels | nindent 6 }}
-      {{- end }}
   updateStrategy:
   {{- if .Values.updateStrategy }}
     {{- toYaml .Values.updateStrategy | nindent 4 }}
