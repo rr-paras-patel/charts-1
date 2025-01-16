@@ -110,6 +110,7 @@ resources:
 
 tolerations: {}
 nodeSelector: {}
+priorityClassName: "system-cluster-critical"
 
 updateStrategy:
   type: RollingUpdate
